@@ -1,0 +1,32 @@
+{
+"type": "FeatureCollection",
+"name": "dimoi_poi_pop_WGS",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "CODE": 2402, "MUNICIPAL": "ΑΛΜΥΡΟΥ", "POPMUN": 16071 }, "geometry": { "type": "Point", "coordinates": [ 22.742372364203966, 39.116591651202647 ] } },
+{ "type": "Feature", "properties": { "CODE": 2503, "MUNICIPAL": "ΣΚΟΠΕΛΟΥ", "POPMUN": 4518 }, "geometry": { "type": "Point", "coordinates": [ 23.691224617292097, 39.128848024278213 ] } },
+{ "type": "Feature", "properties": { "CODE": 2502, "MUNICIPAL": "ΑΛΟΝΝΗΣΟΥ", "POPMUN": 3139 }, "geometry": { "type": "Point", "coordinates": [ 23.919838611673118, 39.210596624465836 ] } },
+{ "type": "Feature", "properties": { "CODE": 2501, "MUNICIPAL": "ΣΚΙΑΘΟΥ", "POPMUN": 5801 }, "geometry": { "type": "Point", "coordinates": [ 23.457570904885497, 39.167653269920969 ] } },
+{ "type": "Feature", "properties": { "CODE": 2404, "MUNICIPAL": "ΝΟΤΙΟΥ ΠΗΛΙΟΥ", "POPMUN": 8273 }, "geometry": { "type": "Point", "coordinates": [ 23.246205924785137, 39.216746523030587 ] } },
+{ "type": "Feature", "properties": { "CODE": 2303, "MUNICIPAL": "ΛΙΜΝΗΣ ΠΛΑΣΤΗΡΑ", "POPMUN": 5231 }, "geometry": { "type": "Point", "coordinates": [ 21.726722312880586, 39.303619488650888 ] } },
+{ "type": "Feature", "properties": { "CODE": 2207, "MUNICIPAL": "ΦΑΡΣΑΛΩΝ", "POPMUN": 16340 }, "geometry": { "type": "Point", "coordinates": [ 22.437749965723736, 39.304928864811885 ] } },
+{ "type": "Feature", "properties": { "CODE": 2302, "MUNICIPAL": "ΑΡΓΙΘΕΑΣ", "POPMUN": 3490 }, "geometry": { "type": "Point", "coordinates": [ 21.515619598285078, 39.295635890645002 ] } },
+{ "type": "Feature", "properties": { "CODE": 2306, "MUNICIPAL": "ΣΟΦΑΔΩΝ", "POPMUN": 16931 }, "geometry": { "type": "Point", "coordinates": [ 22.114886484347014, 39.265148062185624 ] } },
+{ "type": "Feature", "properties": { "CODE": 2401, "MUNICIPAL": "ΒΟΛΟΥ", "POPMUN": 139668 }, "geometry": { "type": "Point", "coordinates": [ 22.911756111951629, 39.368522884485543 ] } },
+{ "type": "Feature", "properties": { "CODE": 2301, "MUNICIPAL": "ΚΑΡΔΙΤΣΑΣ", "POPMUN": 55975 }, "geometry": { "type": "Point", "coordinates": [ 21.895349031461226, 39.267192534365037 ] } },
+{ "type": "Feature", "properties": { "CODE": 2403, "MUNICIPAL": "ΖΑΓΟΡΑΣ ΜΟΥΡΕΣΙΟΥ", "POPMUN": 4565 }, "geometry": { "type": "Point", "coordinates": [ 23.097393312554129, 39.435543537439543 ] } },
+{ "type": "Feature", "properties": { "CODE": 2304, "MUNICIPAL": "ΜΟΥΖΑΚΙΟΥ", "POPMUN": 11248 }, "geometry": { "type": "Point", "coordinates": [ 21.716700224936087, 39.407906862317404 ] } },
+{ "type": "Feature", "properties": { "CODE": 2305, "MUNICIPAL": "ΠΑΛΑΜΑ", "POPMUN": 13424 }, "geometry": { "type": "Point", "coordinates": [ 22.080101778804803, 39.475422006428147 ] } },
+{ "type": "Feature", "properties": { "CODE": 2405, "MUNICIPAL": "ΡΗΓΑ ΦΕΡΑΙΟΥ", "POPMUN": 8866 }, "geometry": { "type": "Point", "coordinates": [ 22.769143267357627, 39.439643638432493 ] } },
+{ "type": "Feature", "properties": { "CODE": 2603, "MUNICIPAL": "ΠΥΛΗΣ", "POPMUN": 12854 }, "geometry": { "type": "Point", "coordinates": [ 21.438626652320348, 39.481086047850269 ] } },
+{ "type": "Feature", "properties": { "CODE": 2204, "MUNICIPAL": "ΚΙΛΕΛΕΡ", "POPMUN": 18073 }, "geometry": { "type": "Point", "coordinates": [ 22.512966855148711, 39.521167849277546 ] } },
+{ "type": "Feature", "properties": { "CODE": 2604, "MUNICIPAL": "ΦΑΡΚΑΔΟΝΑΣ", "POPMUN": 11353 }, "geometry": { "type": "Point", "coordinates": [ 22.037929102020044, 39.58771434720127 ] } },
+{ "type": "Feature", "properties": { "CODE": 2201, "MUNICIPAL": "ΛΑΡΙΣΑΙΩΝ", "POPMUN": 164095 }, "geometry": { "type": "Point", "coordinates": [ 22.336033176227861, 39.621844820452878 ] } },
+{ "type": "Feature", "properties": { "CODE": 2601, "MUNICIPAL": "ΤΡΙΚΚΑΙΩΝ", "POPMUN": 78605 }, "geometry": { "type": "Point", "coordinates": [ 21.766287699011933, 39.579357857577051 ] } },
+{ "type": "Feature", "properties": { "CODE": 2602, "MUNICIPAL": "ΜΕΤΕΩΡΩΝ", "POPMUN": 19273 }, "geometry": { "type": "Point", "coordinates": [ 21.514046626004472, 39.734313548423771 ] } },
+{ "type": "Feature", "properties": { "CODE": 2202, "MUNICIPAL": "ΑΓΙΑΣ", "POPMUN": 10706 }, "geometry": { "type": "Point", "coordinates": [ 22.754831767722163, 39.715342790962083 ] } },
+{ "type": "Feature", "properties": { "CODE": 2206, "MUNICIPAL": "ΤΥΡΝΑΒΟΥ", "POPMUN": 22280 }, "geometry": { "type": "Point", "coordinates": [ 22.296149030283626, 39.768179193879796 ] } },
+{ "type": "Feature", "properties": { "CODE": 2205, "MUNICIPAL": "ΤΕΜΠΩΝ", "POPMUN": 12012 }, "geometry": { "type": "Point", "coordinates": [ 22.544411154323498, 39.83101295598253 ] } },
+{ "type": "Feature", "properties": { "CODE": 2203, "MUNICIPAL": "ΕΛΑΣΣΟΝΑΣ", "POPMUN": 25461 }, "geometry": { "type": "Point", "coordinates": [ 22.151078750015834, 39.945894124570366 ] } }
+]
+}
