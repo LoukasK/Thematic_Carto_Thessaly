@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>MapLibre GIS Viewer</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+    #styleSelector {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 5;
+        background: white;
+        padding: 5px;
+    }
+
+    #controls {
+        position: absolute;
+        top: 60px;
+        left: 10px;
+        z-index: 5;
+        background: white;
+        padding: 10px;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        border-radius: 5px;
+        max-width: 250px;
+    }
+    
+    .classification-controls {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #ccc;
+        display: none;
+    }
+    
+    .classification-controls label {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+    }
+    
+    .classification-controls select {
+        width: 100%;
+        margin-top: 2px;
+        font-size: 11px;
+    }
+
+    #legend {
+        position: absolute;
+        bottom: 20px;
+        left: 10px;
+        z-index: 5;
+        background: white;
+        padding: 15px;
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        border-radius: 5px;
+        display: none;
+        max-width: 280px;
+    }
+
+    .legend-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .legend-color {
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+        border-radius: 3px;
+    }
+    .legend-line {
+        margin-right: 8px;
+    }
+</style>
+</head>
+
+<body>
+
+<select id="styleSelector">
+    <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
+    <option value="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json">Dark</option>
+</select>
+
+<div id="controls">
+    <strong>Layers:</strong><br>
+    <input type="checkbox" id="popdensToggle"> Population Density (POPDENS)<br>
+    <div class="classification-controls" id="classificationControls">
+        <label>Classification Method:
+            <select id="classificationMethod">
+                <option value="equal">Equal Interval</option>
+                <option value="quantile">Quantiles</option>
+                <option value="natural">Natural Breaks (Jenks)</option>
+            </select>
+        </label>
+        <label>Number of Classes:
+            <select id="numClasses">
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5" selected>5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </label>
+    </div>
+    <input type="checkbox" id="poipopToggle"> Municipal Population (POPMUN)<br>
+    <input type="checkbox" id="contoursToggle"> Population contours (2M / 4M)<br>
+    <input type="checkbox" id="dotsToggle"> Dot Map<br>
+    <input type="checkbox" id="boundariesToggle"> Boundaries<br>
+</div>
+
+<div id="legend"></div>
+
+<div id="map"></div>
+
+<script>
+
+// ============================================================
+// MAPLIBRE GIS VIEWER - EDUCATIONAL CODE
+// ============================================================
+// This application demonstrates various GIS visualization techniques
+// including choropleth maps, proportional symbols, contour lines,
+// and dot density maps using MapLibre GL JS.
+// ============================================================
+
+// ----------------------------------------------------
+// BASEMAP INITIALIZATION
+// ----------------------------------------------------
+// Create a new MapLibre map instance with initial settings
+let map = new maplibregl.Map({
+    container: 'map',  // HTML element ID where the map will be rendered
+    style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",  // Basemap style (CartoDB Dark)
+    center: [22.4, 39.6],  // Initial center coordinates [longitude, latitude] - Thessaly, Greece
+    zoom: 8  // Initial zoom level (0 = world view, 20 = street level)
+});
+
+// ----------------------------------------------------
+// LAYER STATE TRACKING
+// ----------------------------------------------------
+// This object keeps track of which layers are currently visible on the map
+// Each layer can be toggled on/off using checkboxes in the control panel
+const enabledLayers = {
+    popdens: false,     // Population density choropleth layer
+    poipop: false,      // Municipal population proportional circles layer
+    contours: false,    // Population potential contour lines
+    dots: false,        // Dot density map
+    boundaries: false   // Municipal boundaries
+};
+
+// ----------------------------------------------------
+// DATA STORAGE
+// ----------------------------------------------------
+// Store the GeoJSON data for the population density layer
+// This allows us to apply different classifications without re-fetching the data
+let popdensData = null;
+
+// ----------------------------------------------------
+// COLOR SCHEMES FOR CLASSIFICATION
+// ----------------------------------------------------
+// Define color ramps for different numbers of classes (3-7)
+// Colors progress from light pink to dark red to represent low to high values
+// Each array contains colors for that number of classes
+const colorSchemes = {
+    3: ['#ffcccc', '#ff6666', '#990000'],
+    4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
+    5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],
+    6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
+    7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
+};
+
+// ----------------------------------------------------
+// LAYER DEFINITIONS
+// ----------------------------------------------------
+const layerDefinitions = {
+
+	popdens: {
+		sourceId: "popdens-src",
+		layerId: "popdens-layer",
+		url: "data/dimoi_popdens_WGS.geojson",
+		type: "fill",
+		paint: {
+			"fill-color": [
+				"step",
+				["get","POPDENS"],
+				"#ffcccc",      // Default (< 50)
+				50, "#ff9999",  // 50-100
+				150, "#ff6666", // 100-250
+				250, "#ff3333", // 250-350
+				350, "#cc0000", // 350-500
+				500, "#990000"  // 500+ (add a darker red)
+			],
+			"fill-opacity": 0.6
+		}
+	},
+
+    poipop: {
+        sourceId: "poipop-src",
+        layerId: "poipop-layer",
+        url: "data/dimoi_poi_pop_WGS.geojson",
+        type: "circle",
+        paint: {
+            "circle-color": "rgba(255,0,0,0.25)",
+            "circle-radius": [
+                "let",
+                "vL", 100000,  // Max value approximation
+                [
+                    "*",
+                    [
+                        "^",
+                        ["/", ["get", "POPMUN"], ["var", "vL"]],
+                        0.57
+                    ],
+                    70  // rL - maximum radius
+                ]
+            ]
+        }
+    },
+
+	contours: {
+		sourceId: "contours-src",
+		layerId: "contours-layer",
+		url: "data/pop_contours_200k_WGS.geojson",
+		type: "line",
+		paint: {
+			"line-color": [
+				"case",
+				["==", ["get","POT"], 4000000], "#8B0000",  // Dark red for 4M
+				"#FF6B6B"  // Light red for 2M
+			],
+			"line-width": [
+				"case",
+				["==", ["get","POT"], 4000000], 3,  // Thick (3px) for 4M
+				1.2  // Thin (1.5px) for 2M
+			]
+		}
+	},
+
+    dots: {
+        sourceId: "dots-src",
+        layerId: "dots-layer",
+        url: "data/pop_dots_300_WGS.geojson",
+        type: "circle",
+        paint: {
+            "circle-color": "#000000",
+            "circle-radius": 1.9
+        }
+    },
+
+    boundaries: {
+        sourceId: "boundaries-src",
+        layerId: "boundaries-layer",
+        url: "data/dimoi_oria_WGS.geojson",
+        type: "line",
+        paint: {
+            "line-color": "#bbbbbb",
+            "line-width": 1
+        }
+    }
+};
+
+// ============================================================
+// CLASSIFICATION ALGORITHMS
+// ============================================================
+// These functions implement three common statistical classification methods
+// used in choropleth mapping to group continuous data into discrete classes
+
+// ----------------------------------------------------
+// MAIN CLASSIFICATION FUNCTION
+// ----------------------------------------------------
+// Routes to the appropriate classification algorithm based on method parameter
+function calculateBreaks(values, numClasses, method) {
+    // Filter out null/undefined values and sort in ascending order
+    const sorted = values.filter(v => v != null).sort((a, b) => a - b);
+    if (sorted.length === 0) return [];
+    
+    // Select classification method
+    if (method === 'equal') {
+        return equalIntervalBreaks(sorted, numClasses);
+    } else if (method === 'quantile') {
+        return quantileBreaks(sorted, numClasses);
+    } else if (method === 'natural') {
+        return jenksBreaks(sorted, numClasses);
+    }
+}
+
+// ----------------------------------------------------
+// EQUAL INTERVAL CLASSIFICATION
+// ----------------------------------------------------
+// Divides the data range into equal-sized intervals
+// Good for: uniformly distributed data, easy interpretation
+// Example: 0-20, 20-40, 40-60, 60-80, 80-100
+function equalIntervalBreaks(sorted, numClasses) {
+    const min = sorted[0];
+    const max = sorted[sorted.length - 1];
+    const interval = (max - min) / numClasses;  // Calculate interval size
+    const breaks = [];
+    
+    // Create break points at equal intervals
+    for (let i = 1; i < numClasses; i++) {
+        breaks.push(Math.round(min + interval * i));
+    }
+    return breaks;
+}
+
+// ----------------------------------------------------
+// QUANTILE CLASSIFICATION
+// ----------------------------------------------------
+// Divides data so each class contains approximately the same number of features
+// Good for: comparing areas with similar numbers of observations per class
+// Ensures balanced distribution across classes
+function quantileBreaks(sorted, numClasses) {
+    const breaks = [];
+    
+    // Find the value at each quantile position
+    for (let i = 1; i < numClasses; i++) {
+        const index = Math.floor((sorted.length * i) / numClasses);
+        breaks.push(sorted[index]);
+    }
+    return breaks;
+}
+
+// ----------------------------------------------------
+// NATURAL BREAKS (JENKS) CLASSIFICATION
+// ----------------------------------------------------
+// Uses Jenks optimization algorithm to minimize within-class variance
+// and maximize between-class variance
+// Good for: highlighting natural groupings in the data
+// Most computationally intensive but often produces most meaningful classes
+function jenksBreaks(sorted, numClasses) {
+    const n = sorted.length;
+    
+    // Initialize matrices for dynamic programming
+    // mat1: stores class membership
+    // mat2: stores variance values
+    const mat1 = Array(n + 1).fill(null).map(() => Array(numClasses + 1).fill(0));
+    const mat2 = Array(n + 1).fill(null).map(() => Array(numClasses + 1).fill(0));
+    
+    // Initialize first row and column
+    for (let i = 1; i <= numClasses; i++) {
+        mat1[1][i] = 1;
+        mat2[1][i] = 0;
+        for (let j = 2; j <= n; j++) {
+            mat2[j][i] = Infinity;  // Set to infinity initially
+        }
+    }
+    
+    // Fill matrices using dynamic programming
+    for (let l = 2; l <= n; l++) {
+        let s1 = 0, s2 = 0, w = 0;
+        
+        // Calculate variance for each possible partition
+        for (let m = 1; m <= l; m++) {
+            const i3 = l - m + 1;
+            const val = sorted[i3 - 1];
+            
+            // Update sum and sum of squares
+            s2 += val * val;
+            s1 += val;
+            w++;
+            
+            // Calculate variance: sum of squares - (sum^2 / count)
+            const v = s2 - (s1 * s1) / w;
+            const i4 = i3 - 1;
+            
+            if (i4 !== 0) {
+                for (let j = 2; j <= numClasses; j++) {
+                    // If this partition is better, update matrices
+                    if (mat2[l][j] >= (v + mat2[i4][j - 1])) {
+                        mat1[l][j] = i3;
+                        mat2[l][j] = v + mat2[i4][j - 1];
+                    }
+                }
+            }
+        }
+        mat1[l][1] = 1;
+        mat2[l][1] = mat2[l - 1][1] + (sorted[l - 1] - sorted[0]) * (sorted[l - 1] - sorted[0]);
+    }
+    
+    // Extract break points from the matrices
+    const breaks = [];
+    let k = n;
+    for (let j = numClasses; j >= 2; j--) {
+        const id = mat1[k][j] - 1;
+        breaks.push(sorted[id]);
+        k = mat1[k][j] - 1;
+    }
+    return breaks.reverse();
+}
+
+// ----------------------------------------------------
+// CREATE MAPLIBRE COLOR EXPRESSION
+// ----------------------------------------------------
+// Converts break points and colors into a MapLibre expression
+// The "step" expression creates discrete color classes
+function createColorExpression(breaks, colors) {
+    const expr = ["step", ["get", "POPDENS"], colors[0]];
+    
+    // Add each break point and its corresponding color
+    for (let i = 0; i < breaks.length; i++) {
+        expr.push(breaks[i], colors[i + 1]);
+    }
+    return expr;
+}
+
+// ============================================================
+// LAYER MANAGEMENT FUNCTIONS
+// ============================================================
+
+// ----------------------------------------------------
+// LOAD LAYER FUNCTION
+// ----------------------------------------------------
+// Adds a layer to the map based on its name
+// Handles special logic for the population density layer (classification)
+function loadLayer(name) {
+    const def = layerDefinitions[name];
+    
+    // Special handling for population density layer (needs classification)
+    if (name === 'popdens') {
+        // Fetch GeoJSON data if not already loaded
+        if (!popdensData) {
+            fetch(def.url)
+                .then(response => response.json())
+                .then(data => {
+                    popdensData = data;  // Store data for future use
+                    applyPopDensClassification();  // Apply initial classification
+                });
+        } else {
+            // Data already loaded, just apply classification
+            applyPopDensClassification();
+        }
+        // Show classification controls
+        document.getElementById("classificationControls").style.display = "block";
+        return;
+    }
+    
+    // Standard layer loading process for other layers
+    // Add source if it doesn't exist
+    if (!map.getSource(def.sourceId)) {
+        map.addSource(def.sourceId, {
+            type: "geojson",
+            data: def.url  // URL to GeoJSON file
+        });
+    }
+    
+    // Add layer if it doesn't exist
+    if (!map.getLayer(def.layerId)) {
+        const layerConfig = {
+            id: def.layerId,
+            type: def.type,        // Layer type (fill, circle, line, etc.)
+            source: def.sourceId,   // Which source to use
+            paint: def.paint        // Styling properties
+        };
+        
+        // Add filter if it exists (used for contours to show only specific values)
+        if (def.filter) {
+            layerConfig.filter = def.filter;
+        }
+        
+        map.addLayer(layerConfig);
+    }
+    
+    // Update state and legend
+    enabledLayers[name] = true;
+    updateLegend();
+}
+
+// ----------------------------------------------------
+// APPLY POPULATION DENSITY CLASSIFICATION
+// ----------------------------------------------------
+// Calculates class breaks and applies color scheme to the population density layer
+// This function is called when the layer is first loaded or when classification settings change
+function applyPopDensClassification() {
+    // Get current classification settings from UI
+    const method = document.getElementById("classificationMethod").value;
+    const numClasses = parseInt(document.getElementById("numClasses").value);
+    const colors = colorSchemes[numClasses];
+    
+    // Extract all POPDENS values from GeoJSON features
+    const values = popdensData.features.map(f => f.properties.POPDENS);
+    
+    // Calculate break points using selected method
+    const breaks = calculateBreaks(values, numClasses, method);
+    
+    // Create MapLibre color expression
+    const colorExpr = createColorExpression(breaks, colors);
+    
+    // Add source if it doesn't exist
+    if (!map.getSource("popdens-src")) {
+        map.addSource("popdens-src", {
+            type: "geojson",
+            data: popdensData
+        });
+    }
+    
+    // Update or add the layer
+    if (map.getLayer("popdens-layer")) {
+        // Layer exists, just update the color scheme
+        map.setPaintProperty("popdens-layer", "fill-color", colorExpr);
+    } else {
+        // Layer doesn't exist, create it
+        map.addLayer({
+            id: "popdens-layer",
+            type: "fill",
+            source: "popdens-src",
+            paint: {
+                "fill-color": colorExpr,
+                "fill-opacity": 0.6
+            }
+        });
+    }
+    
+    // Update state
+    enabledLayers.popdens = true;
+    
+    // Store breaks and colors for legend generation
+    layerDefinitions.popdens.breaks = breaks;
+    layerDefinitions.popdens.colors = colors;
+    
+    // Update legend to reflect new classification
+    updateLegend();
+}
+
+// ----------------------------------------------------
+// REMOVE LAYER FUNCTION
+// ----------------------------------------------------
+// Removes a layer and its source from the map
+function removeLayer(name) {
+    const def = layerDefinitions[name];
+    
+    // Remove layer if it exists
+    if (map.getLayer(def.layerId)) map.removeLayer(def.layerId);
+    
+    // Remove source if it exists
+    if (map.getSource(def.sourceId)) map.removeSource(def.sourceId);
+    
+    // Update state
+    enabledLayers[name] = false;
+    
+    // Hide classification controls if removing population density layer
+    if (name === 'popdens') {
+        document.getElementById("classificationControls").style.display = "none";
+    }
+    
+    // Update legend (will hide or update based on remaining layers)
+    updateLegend();
+}
+
+// ============================================================
+// USER INTERFACE EVENT HANDLERS
+// ============================================================
+
+// ----------------------------------------------------
+// CHECKBOX HANDLERS
+// ----------------------------------------------------
+// Set up event listeners for each layer checkbox
+// When checked: load and display the layer
+// When unchecked: remove the layer from the map
+for (const key in enabledLayers) {
+    document.getElementById(key + "Toggle").onchange = e =>
+        e.target.checked ? loadLayer(key) : removeLayer(key);
+}
+
+// ----------------------------------------------------
+// CLASSIFICATION CONTROLS HANDLERS
+// ----------------------------------------------------
+// When user changes classification method, recalculate and reapply
+document.getElementById("classificationMethod").addEventListener("change", () => {
+    if (enabledLayers.popdens) {  // Only if layer is currently visible
+        applyPopDensClassification();
+    }
+});
+
+// When user changes number of classes, recalculate and reapply
+document.getElementById("numClasses").addEventListener("change", () => {
+    if (enabledLayers.popdens) {  // Only if layer is currently visible
+        applyPopDensClassification();
+    }
+});
+
+// ============================================================
+// LEGEND GENERATION
+// ============================================================
+
+// ----------------------------------------------------
+// UPDATE LEGEND FUNCTION
+// ----------------------------------------------------
+// Dynamically generates legend content based on which layers are currently active
+// This ensures the legend only shows information for visible layers
+function updateLegend() {
+    const legendDiv = document.getElementById("legend");
+    let legendHTML = "";
+    
+    // -----------------------------------------------
+    // POPULATION DENSITY LEGEND (Choropleth)
+    // -----------------------------------------------
+    if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
+        const breaks = layerDefinitions.popdens.breaks;
+        const colors = layerDefinitions.popdens.colors;
+        
+        legendHTML += '<strong>Population Density (people/km²)</strong><br>';
+        
+        // First class (lowest values)
+        legendHTML += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div>0 – ${breaks[0]}</div>`;
+        
+        // Middle classes
+        for (let i = 0; i < breaks.length - 1; i++) {
+            legendHTML += `<div class="legend-row"><div class="legend-color" style="background:${colors[i+1]}"></div>${breaks[i]} – ${breaks[i+1]}</div>`;
+        }
+        
+        // Last class (highest values)
+        legendHTML += `<div class="legend-row"><div class="legend-color" style="background:${colors[colors.length-1]}"></div>${breaks[breaks.length-1]}+</div>`;
+        legendHTML += '<br>';
+    }
+    
+    // -----------------------------------------------
+    // MUNICIPAL POPULATION LEGEND (Proportional Circles)
+    // -----------------------------------------------
+    if (enabledLayers.poipop) {
+        legendHTML += `
+            <strong>Municipal Population</strong><br>
+            <small style="color:#666;">(Flannery Perceptual Scaling)</small><br>
+            <div style="text-align: center; margin-top: 10px;">
+                <svg width="220" height="100">
+                    <!-- Small circle: 1,000 population -->
+                    <circle cx="110" cy="85" r="8" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="1"/>
+                    <text x="110" y="75" text-anchor="middle" font-size="11">1,000</text>
+                    
+                    <!-- Medium circle: 10,000 population -->
+                    <circle cx="110" cy="70" r="20" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="1"/>
+                    <text x="110" y="47" text-anchor="middle" font-size="11">10,000</text>
+                    
+                    <!-- Large circle: 100,000 population -->
+                    <circle cx="110" cy="50" r="40" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="1"/>
+                    <text x="110" y="5" text-anchor="middle" font-size="11">100,000</text>
+                </svg>
+            </div><br>
+        `;
+    }
+    
+    // -----------------------------------------------
+    // POPULATION CONTOURS LEGEND (Isolines)
+    // -----------------------------------------------
+    if (enabledLayers.contours) {
+        legendHTML += `
+            <strong>Population Potential Contours</strong><br>
+            <div class="legend-row">
+                <svg width="40" height="15" class="legend-line">
+                    <line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/>
+                </svg>
+                <span>4,000,000 (Major)</span>
+            </div>
+            <div class="legend-row">
+                <svg width="40" height="15" class="legend-line">
+                    <line x1="0" y1="7" x2="40" y2="7" stroke="#FF6B6B" stroke-width="1.5"/>
+                </svg>
+                <span>2,000,000 (Minor)</span>
+            </div><br>
+        `;
+    }
+    
+    // -----------------------------------------------
+    // DOT DENSITY LEGEND
+    // -----------------------------------------------
+    if (enabledLayers.dots) {
+        legendHTML += `
+            <strong>Dot Density Map</strong><br>
+            <div class="legend-row">
+                <svg width="20" height="20">
+                    <circle cx="10" cy="10" r="2" fill="#000000"/>
+                </svg>
+                <span>1 dot = 500 people</span>
+            </div><br>
+        `;
+    }
+    
+    // -----------------------------------------------
+    // BOUNDARIES LEGEND
+    // -----------------------------------------------
+    if (enabledLayers.boundaries) {
+        legendHTML += `
+            <strong>Administrative Boundaries</strong><br>
+            <div class="legend-row">
+                <svg width="30" height="15" class="legend-line">
+                    <line x1="0" y1="7" x2="30" y2="7" stroke="#bbbbbb" stroke-width="1"/>
+                </svg>
+                <span>Municipal boundaries</span>
+            </div>
+        `;
+    }
+    
+    // Show or hide legend based on whether any layers are active
+    if (legendHTML) {
+        legendDiv.innerHTML = legendHTML;
+        legendDiv.style.display = "block";
+    } else {
+        legendDiv.style.display = "none";
+    }
+}
+
+// ============================================================
+// BASEMAP STYLE MANAGEMENT
+// ============================================================
+
+// ----------------------------------------------------
+// STYLE SWITCHER
+// ----------------------------------------------------
+// Allow users to switch between light and dark basemaps
+document.getElementById("styleSelector").addEventListener("change", (e) => {
+    map.setStyle(e.target.value);  // Apply new basemap style
+});
+
+// ----------------------------------------------------
+// RELOAD LAYERS AFTER STYLE CHANGE
+// ----------------------------------------------------
+// When basemap style changes, all custom layers are removed
+// This event listener re-adds any layers that were visible before the style change
+map.on('styledata', () => {
+    for (const key in enabledLayers) {
+        if (enabledLayers[key]) {
+            loadLayer(key);  // Reload each enabled layer
+        }
+    }
+});
+
+// ----------------------------------------------------
+// MAP LOAD EVENT
+// ----------------------------------------------------
+// This event fires when the map is fully initialized and ready
+map.on('load', () => {
+    // Optional: You can load default layers here
+    // Example: loadLayer("popdens");
+    // For now, users must manually enable layers via checkboxes
+});
+
+// ============================================================
+// END OF CODE
+// ============================================================
+// This GIS viewer demonstrates:
+// - Choropleth mapping with dynamic classification
+// - Proportional symbol mapping with perceptual scaling
+// - Isoline/contour visualization
+// - Dot density mapping
+// - Interactive layer control
+// - Dynamic legend generation
+// - Multiple basemap options
+// ============================================================
+
+</script>
+</body>
+</html>
