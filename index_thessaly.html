@@ -58,6 +58,7 @@
     overflow-y: auto;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     display: none;
+    resize: both; /* STUDENTS: Allows diagonal resizing of legend panel */
   }
   .legend-row { display:flex; align-items:center; margin-bottom:8px; }
   .legend-color { width:20px; height:20px; margin-right:8px; border-radius:3px; flex:none; }
@@ -192,130 +193,243 @@
 <script>
 /* ============================================================
    MapLibre GIS Viewer (complete)
-   - Copy this file to your repo root and keep the GeoJSONs
-     in a folder named "data" next to it.
-   - Works with GitHub Pages if files are committed to the repo.
+   ============================================================
+   This is an interactive cartography viewer for displaying multiple
+   thematic map types (choropleth, proportional symbols, dot density,
+   contours, and boundaries) using MapLibre GL JS.
+   
+   STUDENTS: Setup instructions
+   - Copy this HTML file to your repository root directory
+   - Place all GeoJSON data files in a folder named "data/" next to this HTML
+   - If using GitHub Pages, files will be accessible at:
+     https://<username>.github.io/<repo>/data/<filename>.geojson
+   - The viewer works with any properly formatted GeoJSON files
    ============================================================ */
 
 /* -------------------------------
    Map initialization
    -------------------------------
-   STUDENTS: change center and zoom if you need a different view.
+   STUDENTS: Adjust these values to fit your study area:
+   - center: [longitude, latitude] - the initial map center point
+   - zoom: initial zoom level (higher = more zoomed in)
    */
 const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  center: [22.4, 39.6],
-  zoom: 8
+  container: 'map',                                                      // HTML element ID to render map
+  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',  // Default basemap (dark theme)
+  center: [22.4, 39.6],                                                 // STUDENTS: Change to your area's coordinates
+  zoom: 8                                                               // STUDENTS: Adjust zoom level as needed
 });
 
 /* -------------------------------
    Layer definitions (DATA inputs)
-   STUDENTS: change the "url" paths if your filenames differ.
+   -------------------------------
+   STUDENTS: This section defines all data sources for your map layers.
+   You MUST update the "url" paths to match YOUR GeoJSON filenames.
+   
+   Each layer has:
+   - sourceId: unique identifier for the data source
+   - layerId: unique identifier for the rendered layer
+   - url: path to your GeoJSON file (relative to this HTML file)
+   - dataField: name of the attribute field containing values to visualize
+   
+   Example: If your population density file is named "my_density.geojson",
+   change the url to: 'data/my_density.geojson'
    ------------------------------- */
 const layerDefinitions = {
+  // CHOROPLETH MAP - Population density visualization
   popdens: {
-    sourceId: 'popdens-src',
-    layerId: 'popdens-layer',
-    url: 'data/dimoi_popdens_WGS.geojson',   // <- change here if needed
-    dataField: 'POPDENS'                     // <- field used for classification
+    sourceId: 'popdens-src',                      // Internal source identifier
+    layerId: 'popdens-layer',                     // Internal layer identifier
+    url: 'data/dimoi_popdens_WGS.geojson',        // STUDENTS: Change this path to your density file
+    dataField: 'POPDENS'                          // STUDENTS: Change this to match your density attribute name
   },
+  
+  // PROPORTIONAL CIRCLES - Municipal population visualization
   poipop: {
-    sourceId: 'poipop-src',
-    layerId: 'poipop-layer',
-    url: 'data/dimoi_poi_pop_WGS.geojson',   // <- change here if needed
-    dataField: 'POPMUN',
-    // Approx max value; you can set this to actual max of your dataset for nicer scaling
-    maxValueApprox: 100000
+    sourceId: 'poipop-src',                       // Internal source identifier
+    layerId: 'poipop-layer',                      // Internal layer identifier
+    url: 'data/dimoi_poi_pop_WGS.geojson',        // STUDENTS: Change this path to your population points file
+    dataField: 'POPMUN',                          // STUDENTS: Change this to match your population attribute name
+    maxValueApprox: 100000                        // STUDENTS: Change this to approximate maximum population value in your dataset
+                                                  // This affects circle size scaling - set to your actual max for best results
   },
+  
+  // CONTOUR LINES - Population potential contours
   contours: {
-    sourceId: 'contours-src',
-    layerId: 'contours-layer',
-    url: 'data/pop_contours_200k_WGS.geojson' // <- change if your file name differs
-    // expects field 'ID' to indicate primary (1) or secondary (2)
+    sourceId: 'contours-src',                     // Internal source identifier
+    layerId: 'contours-layer',                    // Internal layer identifier
+    url: 'data/pop_contours_200k_WGS.geojson'     // STUDENTS: Change this path to your contours file
+    // NOTE: This layer expects an attribute field 'ID' with values:
+    // - ID = 1 for primary contours (thicker lines)
+    // - ID = 2 for secondary contours (thinner lines)
   },
+  
+  // DOT DENSITY MAP - Individual population occurrences
   dots: {
-    sourceId: 'dots-src',
-    layerId: 'dots-layer',
-    url: 'data/pop_dots_300_WGS.geojson'
+    sourceId: 'dots-src',                         // Internal source identifier
+    layerId: 'dots-layer',                        // Internal layer identifier
+    url: 'data/pop_dots_300_WGS.geojson'          // STUDENTS: Change this path to your dot density file
+    // NOTE: Each point represents a fixed number of people (e.g., 1 dot = 300 people)
   },
+  
+  // BOUNDARIES - Administrative boundaries (reference layer)
   boundaries: {
-    sourceId: 'boundaries-src',
-    layerId: 'boundaries-layer',
-    url: 'data/dimoi_oria_WGS.geojson'
+    sourceId: 'boundaries-src',                   // Internal source identifier
+    layerId: 'boundaries-layer',                  // Internal layer identifier
+    url: 'data/dimoi_oria_WGS.geojson'            // STUDENTS: Change this path to your boundaries file
   }
 };
 
 /* -------------------------------
-   Local state
+   Local state variables
+   -------------------------------
+   These variables track the current state of the map:
+   - popdensData: stores the loaded GeoJSON for population density
+     (cached to avoid re-fetching when changing classification methods)
+   - enabledLayers: tracks which layers are currently visible on the map
    ------------------------------- */
-let popdensData = null;      // cached GeoJSON for POPDENS (so we can reclassify without re-fetching)
-const enabledLayers = { popdens:false, poipop:false, contours:false, dots:false, boundaries:false };
+let popdensData = null;      // Cached GeoJSON for POPDENS layer
+const enabledLayers = { 
+  popdens: false,            // Population density choropleth
+  poipop: false,             // Proportional circles
+  contours: false,           // Population contours
+  dots: false,               // Dot density map
+  boundaries: false          // Municipal boundaries
+};
 
 /* -------------------------------
-   Color ramps for choropleth (by class count)
-   STUDENTS: modify colors to taste
+   Color ramps for choropleth maps
+   -------------------------------
+   STUDENTS: These color schemes define the colors used for population density classification.
+   You can modify these arrays to change the color progression for each class count.
+   
+   Format: Each array progresses from light to dark (low density → high density)
+   - First color = lowest density class
+   - Last color = highest density class
+   
+   To change colors:
+   1. Use hex color codes (e.g., '#ff0000' for red)
+   2. Maintain the same number of colors as the number of classes
+   3. Consider color-blind friendly palettes for accessibility
+   
+   Current scheme: Light red → Dark red progression
    ------------------------------- */
 const colorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],
-  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],
-  6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
-  7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
+  3: ['#ffcccc', '#ff6666', '#990000'],           // 3-class scheme: light red, medium red, dark red
+  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'], // 4-class scheme
+  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'], // 5-class scheme (default)
+  6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'], // 6-class scheme
+  7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000'] // 7-class scheme
+  
+  // STUDENTS: Example of alternative color schemes you could use:
+  // Blue scheme: 5: ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c']
+  // Green scheme: 5: ['#edf8e9', '#bae4b3', '#74c476', '#31a354', '#006d2c']
+  // Yellow-Red: 5: ['#ffffb2', '#fecc5c', '#fd8d3c', '#f03b20', '#bd0026']
 };
 
 /* ============================================================
-   Classification functions (equal interval, quantile, Jenks)
-   These are used for POPDENS classification.
+   Classification algorithms for choropleth maps
+   ============================================================
+   These functions calculate class breaks (boundaries between categories)
+   for the population density choropleth map using different statistical methods.
+   
+   Three methods are available:
+   1. Equal Interval: Divides the data range into equal-sized intervals
+   2. Quantiles: Each class contains approximately the same number of features
+   3. Jenks Natural Breaks: Minimizes within-class variance, maximizes between-class variance
+   
+   STUDENTS: Understanding these methods is crucial for proper data visualization.
+   Different methods can tell very different stories with the same data!
    ============================================================ */
 
-/* equal interval */
+/* EQUAL INTERVAL CLASSIFICATION
+   --------------------------------
+   Divides the range (max - min) into equal-sized intervals.
+   
+   Example: If values range from 0-100 with 5 classes:
+   Class breaks would be at: 20, 40, 60, 80
+   Each interval spans exactly 20 units.
+   
+   Best for: Data with uniform distribution across the range
+   Drawback: Can create empty classes if data is clustered
+   */
 function equalIntervalBreaks(sorted, n) {
-  const min = sorted[0], max = sorted[sorted.length-1];
-  if (min === max) return [max];
-  const step = (max - min) / n;
+  const min = sorted[0];                          // Minimum value in dataset
+  const max = sorted[sorted.length-1];            // Maximum value in dataset
+  if (min === max) return [max];                  // Handle case where all values are identical
+  const step = (max - min) / n;                   // Calculate interval size
   const breaks = [];
-  for (let i=1;i<n;i++) breaks.push(min + step*i);
-  return breaks.map(b => Number(b.toFixed(2)));
+  for (let i=1; i<n; i++) {                       // Create n-1 break points (n classes need n-1 breaks)
+    breaks.push(min + step*i);                    // Add each break point
+  }
+  return breaks.map(b => Number(b.toFixed(2)));   // Round to 2 decimal places for display
 }
 
-/* quantile */
+/* QUANTILE CLASSIFICATION
+   -------------------------
+   Divides the data into classes with equal numbers of features.
+   
+   Example: With 100 features and 5 classes:
+   Each class contains exactly 20 features (20% of total)
+   
+   Best for: Ensuring all classes are represented on the map
+   Drawback: Can place very different values in adjacent classes if data is skewed
+   */
 function quantileBreaks(sorted, n) {
   const breaks = [];
-  for (let i=1;i<n;i++){
-    const idx = Math.floor((sorted.length * i)/n);
-    breaks.push(sorted[Math.min(idx, sorted.length-1)]);
+  for (let i=1; i<n; i++){                        // Create n-1 break points
+    const idx = Math.floor((sorted.length * i)/n); // Calculate position in sorted array
+    breaks.push(sorted[Math.min(idx, sorted.length-1)]); // Get value at that position
   }
-  return breaks.map(b => Number(b.toFixed(2)));
+  return breaks.map(b => Number(b.toFixed(2)));   // Round to 2 decimal places
 }
 
-/* Jenks (natural breaks) */
+/* JENKS NATURAL BREAKS (Jenks Optimization)
+   -------------------------------------------
+   Uses an iterative algorithm to find "natural" groupings in the data
+   by minimizing variance within classes and maximizing variance between classes.
+   
+   This is a dynamic programming implementation of the Jenks algorithm.
+   
+   Best for: Revealing natural clusters and patterns in data
+   Drawback: Computationally intensive for large datasets
+   Note: This is the most statistically sophisticated method
+   */
 function jenksBreaks(sorted, numClasses) {
   const n = sorted.length;
+  
+  // Initialize matrices for dynamic programming
+  // mat1: stores the class assignments
+  // mat2: stores the variance values
   const mat1 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
   const mat2 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
 
-  for (let i=1;i<=numClasses;i++) {
-    mat1[1][i] = 1;
-    mat2[1][i] = 0;
-    for (let j=2;j<=n;j++) mat2[j][i] = Infinity;
+  // Initialize first row of matrices
+  for (let i=1; i<=numClasses; i++) {
+    mat1[1][i] = 1;                               // First element always goes in first class
+    mat2[1][i] = 0;                               // No variance with single element
+    for (let j=2; j<=n; j++) {
+      mat2[j][i] = Infinity;                      // Initialize with high variance
+    }
   }
 
-  for (let l=2;l<=n;l++) {
-    let s1=0, s2=0, w=0;
-    for (let m=1;m<=l;m++) {
+  // Dynamic programming: build up optimal classification
+  for (let l=2; l<=n; l++) {                      // For each data point
+    let s1=0, s2=0, w=0;                          // Sum, sum of squares, weight
+    for (let m=1; m<=l; m++) {                    // Try different class boundaries
       const i3 = l - m + 1;
       const val = sorted[i3 - 1];
-      s2 += val*val;
-      s1 += val;
-      w++;
-      const v = s2 - (s1*s1)/w;
+      s2 += val*val;                              // Add to sum of squares
+      s1 += val;                                  // Add to sum
+      w++;                                        // Increment count
+      const v = s2 - (s1*s1)/w;                   // Calculate variance
       const i4 = i3 - 1;
       if (i4 !== 0) {
-        for (let j=2;j<=numClasses;j++){
+        for (let j=2; j<=numClasses; j++){        // For each class
+          // If this split reduces total variance, use it
           if (mat2[l][j] >= (v + mat2[i4][j-1])) {
-            mat1[l][j] = i3;
-            mat2[l][j] = v + mat2[i4][j-1];
+            mat1[l][j] = i3;                      // Store optimal split point
+            mat2[l][j] = v + mat2[i4][j-1];       // Store new minimum variance
           }
         }
       }
@@ -324,6 +438,7 @@ function jenksBreaks(sorted, numClasses) {
     mat2[l][1] = mat2[l-1][1] + (sorted[l-1]-sorted[0])*(sorted[l-1]-sorted[0]);
   }
 
+  // Extract break points from optimal solution
   const breaks = [];
   let k = n;
   for (let j = numClasses; j >= 2; j--) {
@@ -331,92 +446,158 @@ function jenksBreaks(sorted, numClasses) {
     breaks.push(sorted[id]);
     k = mat1[k][j] - 1;
   }
-  return breaks.reverse().map(b => Number(b.toFixed(2)));
+  return breaks.reverse().map(b => Number(b.toFixed(2))); // Return in ascending order
 }
 
-/* function that routes to the algorithm */
+/* CLASSIFICATION METHOD ROUTER
+   ------------------------------
+   Selects and executes the appropriate classification algorithm.
+   
+   Parameters:
+   - values: array of numerical values to classify
+   - numClasses: number of classes to create
+   - method: 'equal', 'quantile', or 'natural'
+   
+   Returns: array of break points (always n-1 breaks for n classes)
+   */
 function calculateBreaks(values, numClasses, method) {
+  // Filter out null, undefined, and NaN values, then sort
   const sorted = values.filter(v => v != null && !isNaN(v)).sort((a,b)=>a-b);
-  if (sorted.length === 0) return [];
+  if (sorted.length === 0) return [];             // No valid data
+  
+  // Route to appropriate algorithm based on method
   if (method === 'equal') return equalIntervalBreaks(sorted, numClasses);
   if (method === 'quantile') return quantileBreaks(sorted, numClasses);
   if (method === 'natural') return jenksBreaks(sorted, numClasses);
-  return equalIntervalBreaks(sorted, numClasses);
+  
+  return equalIntervalBreaks(sorted, numClasses); // Default fallback
 }
 
-/* create MapLibre "step" expression from breaks + colors */
+/* CREATE MAPLIBRE STYLE EXPRESSION
+   ----------------------------------
+   Converts break points and colors into a MapLibre GL "step" expression.
+   
+   A step expression evaluates the value of a feature's attribute and returns
+   the appropriate color based on which interval the value falls into.
+   
+   Format: ["step", ["get", "FIELD"], color0, break1, color1, break2, color2, ...]
+   
+   Example with breaks [100, 200] and colors ['#fff', '#aaa', '#000']:
+   - Values < 100 → '#fff' (color0)
+   - Values 100-200 → '#aaa' (color1)  
+   - Values > 200 → '#000' (color2)
+   */
 function createStepExpression(breaks, colors, field='POPDENS') {
-  // ["step", ["get","POPDENS"], color0, break0, color1, break1, color2 ...]
-  const expr = ['step', ['get', field], colors[0]];
-  for (let i=0;i<breaks.length;i++){
-    expr.push(breaks[i]);
-    expr.push(colors[i+1] || colors[colors.length-1]);
+  const expr = ['step', ['get', field], colors[0]]; // Start with first color for lowest values
+  for (let i=0; i<breaks.length; i++){
+    expr.push(breaks[i]);                         // Add break point
+    expr.push(colors[i+1] || colors[colors.length-1]); // Add corresponding color
   }
   return expr;
 }
 
 /* ============================================================
-   Add / update layers
+   Layer loading and management functions
+   ============================================================
+   These functions handle adding, updating, and removing map layers.
+   Each function is specific to one layer type.
    ============================================================ */
 
-/* helper: ensure source exists */
+/* HELPER FUNCTION: Ensure GeoJSON source exists
+   -----------------------------------------------
+   Before adding a layer, we must ensure its data source is loaded.
+   This function either creates a new source or updates an existing one.
+   */
 function ensureSource(id, urlOrGeojson) {
   if (!map.getSource(id)) {
+    // Source doesn't exist yet - create it
     map.addSource(id, { type: 'geojson', data: urlOrGeojson });
   } else {
-    // update data if a GeoJSON object was provided
-    if (typeof urlOrGeojson === 'object') map.getSource(id).setData(urlOrGeojson);
+    // Source exists - update its data if a GeoJSON object was provided
+    if (typeof urlOrGeojson === 'object') {
+      map.getSource(id).setData(urlOrGeojson);
+    }
   }
 }
 
-/* POPDENS: compute breaks and add layer (or update) */
+/* POPULATION DENSITY CHOROPLETH
+   -------------------------------
+   Applies classification to the population density data and renders it as a choropleth.
+   
+   Process:
+   1. Read classification method and number of classes from UI controls
+   2. Extract values from the cached GeoJSON data
+   3. Calculate break points using selected classification method
+   4. Create color expression that maps values to colors
+   5. Add or update the fill layer on the map
+   
+   STUDENTS: This function is called when you toggle the layer ON or change
+   classification settings. The default is Equal Interval with 5 classes.
+   */
 function applyPopDensClassification() {
   if (!popdensData) {
     console.warn('No popdensData cached.');
     return;
   }
-  const method = document.getElementById('classificationMethod').value;
-  const nclasses = parseInt(document.getElementById('numClasses').value,10);
-  const colors = colorSchemes[nclasses] || colorSchemes[5];
+  
+  // Get current UI settings
+  const method = document.getElementById('classificationMethod').value;  // 'equal', 'quantile', or 'natural'
+  const nclasses = parseInt(document.getElementById('numClasses').value,10); // Number of classes (3-7)
+  const colors = colorSchemes[nclasses] || colorSchemes[5]; // Get color array for this class count
 
-  // gather values
+  // Extract all density values from the GeoJSON features
   const values = popdensData.features.map(f => parseFloat(f.properties[layerDefinitions.popdens.dataField]));
+  
+  // Calculate break points using the selected classification method
   const breaks = calculateBreaks(values, nclasses, method);
+  
+  // Create MapLibre style expression that assigns colors based on density values
   const expr = createStepExpression(breaks, colors, layerDefinitions.popdens.dataField);
 
-  // ensure source
+  // Ensure the data source exists on the map
   ensureSource(layerDefinitions.popdens.sourceId, popdensData);
 
-  // add or update layer
+  // Add the layer or update it if it already exists
   if (map.getLayer(layerDefinitions.popdens.layerId)) {
+    // Layer exists - just update the color scheme
     map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-color', expr);
   } else {
+    // Layer doesn't exist - create it
     map.addLayer({
       id: layerDefinitions.popdens.layerId,
-      type: 'fill',
+      type: 'fill',                               // Polygon fill layer
       source: layerDefinitions.popdens.sourceId,
       paint: {
-        'fill-color': expr,
-        'fill-opacity': parseInt(document.getElementById('popdensOpacity').value,10)/100
+        'fill-color': expr,                       // Color expression based on classification
+        'fill-opacity': parseInt(document.getElementById('popdensOpacity').value,10)/100 // Opacity from slider
       }
     });
   }
 
-  // save used breaks/colors for legend
+  // Save the breaks and colors for legend generation
   layerDefinitions.popdens.breaks = breaks;
   layerDefinitions.popdens.colors = colors;
+  
+  // Update state and UI
   enabledLayers.popdens = true;
   document.getElementById('popdensControls').style.display = 'block';
   updateLegend();
 }
 
-/* load POPDENS geojson and apply default classification (equal interval) */
+/* LOAD POPULATION DENSITY DATA
+   ------------------------------
+   Fetches the GeoJSON file from the server and applies default classification.
+   
+   STUDENTS: The default classification is Equal Interval because that's what
+   the UI dropdown is set to initially. After loading, you can change the
+   classification method using the controls.
+   */
 function loadPopDensLayer() {
-  fetch(layerDefinitions.popdens.url)
-    .then(r => r.json())
+  fetch(layerDefinitions.popdens.url)             // Fetch GeoJSON from path specified in layerDefinitions
+    .then(r => r.json())                          // Parse JSON response
     .then(gj => {
-      popdensData = gj; // cache
-      applyPopDensClassification(); // equal interval default because UI default is set to equal
+      popdensData = gj;                           // Cache the data for reclassification
+      applyPopDensClassification();               // Apply Equal Interval classification (UI default)
     })
     .catch(err => {
       console.error('Failed to load POPDENS:', err);
@@ -424,327 +605,677 @@ function loadPopDensLayer() {
     });
 }
 
-/* POPMUN: add proportional circle layer (Flannery) */
+/* PROPORTIONAL CIRCLES (Flannery Scaling)
+   ------------------------------------------
+   Displays municipal population as graduated circles using Flannery's
+   perceptual scaling method (exponent 0.57).
+   
+   WHY FLANNERY SCALING?
+   Humans underestimate the size of larger circles. Flannery's research
+   showed that using an exponent of 0.57 (instead of 0.5 for area-based
+   scaling) creates circles that APPEAR proportional to viewers.
+   
+   Formula: radius = (value / maxValue)^0.57 × maxRadius
+   
+   STUDENTS: You can adjust:
+   1. maxValueApprox in layerDefinitions.poipop (approximate max population)
+   2. The maxRadius slider in the UI (controls largest circle size)
+   3. Circle colors in the paint properties below
+   */
 function loadPoipopLayer() {
   const def = layerDefinitions.poipop;
-  ensureSource(def.sourceId, def.url);
+  ensureSource(def.sourceId, def.url);          // Load the GeoJSON data
 
-  // create radius expression using Flannery exponent (0.57)
-  const maxR = parseInt(document.getElementById('maxRadius').value,10);
-  const vL = def.maxValueApprox || 100000; // approximate max value - students can change
-  // Expression: ["*", ["^", ["/", ["get","POPMUN"], vL], 0.57], maxR]
+  // Get current maximum radius from slider
+  const maxR = parseInt(document.getElementById('maxRadius').value,10); // STUDENTS: Default is 70px, range 20-200
+  
+  // Get the approximate maximum population value
+  const vL = def.maxValueApprox || 100000;      // STUDENTS: Change maxValueApprox in layerDefinitions to match your data
+  
+  // Create Flannery-scaled radius expression
+  // Formula breakdown:
+  // 1. ['get', def.dataField] - get population value from feature
+  // 2. ['/', ..., vL] - normalize to 0-1 range
+  // 3. ['^', ..., 0.57] - apply Flannery exponent
+  // 4. ['*', ..., maxR] - scale to pixel radius
   const radiusExpr = ['*', ['^', ['/', ['get', def.dataField], vL], 0.57], maxR];
 
   if (!map.getLayer(def.layerId)) {
+    // Layer doesn't exist - create it
     map.addLayer({
       id: def.layerId,
-      type: 'circle',
+      type: 'circle',                             // Circle (point) layer
       source: def.sourceId,
       paint: {
-        'circle-color': 'rgba(255,0,0,0.25)',
-        'circle-radius': radiusExpr,
+        'circle-color': 'rgba(255,0,0,0.25)',     // STUDENTS: Change this for different fill color
+        'circle-radius': radiusExpr,              // Flannery-scaled radius
         'circle-opacity': parseInt(document.getElementById('poipopOpacity').value,10)/100,
-        'circle-stroke-color': 'red',
-        'circle-stroke-width': 0.8
+        'circle-stroke-color': 'red',             // STUDENTS: Change this for different outline color
+        'circle-stroke-width': 0.8                // STUDENTS: Adjust outline thickness
       }
     });
   } else {
-    // update paint props
+    // Layer exists - update properties
     map.setPaintProperty(def.layerId, 'circle-radius', radiusExpr);
     map.setPaintProperty(def.layerId, 'circle-opacity', parseInt(document.getElementById('poipopOpacity').value,10)/100);
   }
 
+  // Update state and UI
   enabledLayers.poipop = true;
   document.getElementById('poipopControls').style.display = 'block';
   updateLegend();
 }
 
-/* Update Poipop radius when slider changes */
+/* UPDATE PROPORTIONAL CIRCLE RADIUS
+   -----------------------------------
+   Called when the maxRadius slider changes.
+   Recalculates the radius expression with the new maximum radius value.
+   */
 function updatePoipopRadius() {
   const def = layerDefinitions.poipop;
-  if (!map.getLayer(def.layerId)) return;
-  const maxR = parseInt(document.getElementById('maxRadius').value,10);
-  const vL = def.maxValueApprox || 100000;
+  if (!map.getLayer(def.layerId)) return;       // Exit if layer doesn't exist
+  
+  const maxR = parseInt(document.getElementById('maxRadius').value,10); // Get new max radius
+  const vL = def.maxValueApprox || 100000;      // Get max population value
+  
+  // Recreate the Flannery-scaled radius expression
   const radiusExpr = ['*', ['^', ['/', ['get', def.dataField], vL], 0.57], maxR];
+  
+  // Update the layer's circle radius
   map.setPaintProperty(def.layerId, 'circle-radius', radiusExpr);
-  updateLegend();
+  updateLegend();                                 // Update legend to reflect new sizes
 }
 
-/* Contours: style by Id (1 primary thicker, 2 secondary thinner) */
+/* POPULATION CONTOURS
+   ---------------------
+   Displays population potential contour lines with different widths
+   for primary and secondary contours.
+   
+   DATA REQUIREMENTS:
+   Your GeoJSON must have an 'ID' field with values:
+   - ID = 1 for primary contours (displayed with thicker lines)
+   - ID = 2 for secondary contours (displayed with thinner lines)
+   
+   STUDENTS: You can adjust:
+   1. Line color in the 'color' variable below
+   2. Line widths in the widthExpr array [primaryWidth, secondaryWidth]
+   */
 function loadContoursLayer() {
   const def = layerDefinitions.contours;
-  ensureSource(def.sourceId, def.url);
+  ensureSource(def.sourceId, def.url);          // Load contour GeoJSON
 
-  // line width expression depending on Id
-  const widthExpr = ['case', ['==', ['get', 'ID'], 1], 3, 1.2];
-  const color = '#8B0000'; // constant dark red as requested
+  // Create line width expression based on ID field
+  // ["case", condition, value_if_true, value_if_false]
+  // If ID === 1, use width 3 (primary), otherwise use width 1.2 (secondary)
+  const widthExpr = ['case', ['==', ['get', 'ID'], 1], 3, 1.2]; // STUDENTS: Adjust widths here [primary, secondary]
+  
+  const color = '#8B0000';                      // STUDENTS: Change this hex code for different contour color
+                                                 // Current: dark red
 
   if (!map.getLayer(def.layerId)) {
+    // Layer doesn't exist - create it
     map.addLayer({
       id: def.layerId,
-      type: 'line',
+      type: 'line',                               // Line layer for contours
       source: def.sourceId,
       paint: {
-        'line-color': color,
-        'line-width': widthExpr,
+        'line-color': color,                      // Constant color for all contours
+        'line-width': widthExpr,                  // Variable width based on ID field
         'line-opacity': parseInt(document.getElementById('contoursOpacity').value,10)/100
       }
     });
   } else {
+    // Layer exists - update properties
     map.setPaintProperty(def.layerId, 'line-width', widthExpr);
     map.setPaintProperty(def.layerId, 'line-opacity', parseInt(document.getElementById('contoursOpacity').value,10)/100);
   }
 
+  // Update state and UI
   enabledLayers.contours = true;
   document.getElementById('contoursControls').style.display = 'block';
   updateLegend();
 }
 
-/* Dot map: simple point layer with adjustable radius */
+/* DOT DENSITY MAP
+   -----------------
+   Displays individual dots representing population distribution.
+   Each dot typically represents a fixed number of people (e.g., 1 dot = 500 people).
+   
+   STUDENTS: You can adjust:
+   1. Dot color in 'circle-color' below
+   2. Default dot size via the dotSize slider (default 1.9px)
+   3. The "1 dot = X people" ratio is determined by how you created your dot GeoJSON
+   */
 function loadDotsLayer() {
   const def = layerDefinitions.dots;
-  ensureSource(def.sourceId, def.url);
+  ensureSource(def.sourceId, def.url);          // Load dots GeoJSON
 
-  const dotSize = parseFloat(document.getElementById('dotSize').value);
-  const opacity = parseInt(document.getElementById('dotsOpacity').value,10)/100;
+  const dotSize = parseFloat(document.getElementById('dotSize').value); // Get size from slider
+  const opacity = parseInt(document.getElementById('dotsOpacity').value,10)/100; // Get opacity from slider
 
   if (!map.getLayer(def.layerId)) {
+    // Layer doesn't exist - create it
     map.addLayer({
       id: def.layerId,
-      type: 'circle',
+      type: 'circle',                             // Circle (point) layer
       source: def.sourceId,
       paint: {
-        'circle-color': '#000000',
-        'circle-radius': dotSize,
-        'circle-opacity': opacity
+        'circle-color': '#000000',                // STUDENTS: Change this for different dot color (current: black)
+        'circle-radius': dotSize,                 // Constant radius controlled by slider
+        'circle-opacity': opacity                 // Opacity controlled by slider
       }
     });
   } else {
+    // Layer exists - update properties
     map.setPaintProperty(def.layerId, 'circle-radius', dotSize);
     map.setPaintProperty(def.layerId, 'circle-opacity', opacity);
   }
 
+  // Update state and UI
   enabledLayers.dots = true;
   document.getElementById('dotsControls').style.display = 'block';
   updateLegend();
 }
 
-/* Boundaries: simple line layer with opacity control */
+/* MUNICIPAL BOUNDARIES
+   ----------------------
+   Displays administrative boundary lines as a reference layer.
+   
+   STUDENTS: You can adjust:
+   1. Line color in 'line-color' below
+   2. Line width in 'line-width' below
+   3. Default opacity via the boundaries slider
+   */
 function loadBoundariesLayer() {
   const def = layerDefinitions.boundaries;
-  ensureSource(def.sourceId, def.url);
+  ensureSource(def.sourceId, def.url);          // Load boundaries GeoJSON
 
   if (!map.getLayer(def.layerId)) {
+    // Layer doesn't exist - create it
     map.addLayer({
       id: def.layerId,
-      type: 'line',
+      type: 'line',                               // Line layer for boundaries
       source: def.sourceId,
       paint: {
-        'line-color': '#bbbbbb',
-        'line-width': 1,
+        'line-color': '#bbbbbb',                  // STUDENTS: Change this for different boundary color (current: light gray)
+        'line-width': 1,                          // STUDENTS: Adjust line thickness
         'line-opacity': parseInt(document.getElementById('boundariesOpacity').value,10)/100
       }
     });
   } else {
+    // Layer exists - update opacity
     map.setPaintProperty(def.layerId, 'line-opacity', parseInt(document.getElementById('boundariesOpacity').value,10)/100);
   }
 
+  // Update state and UI
   enabledLayers.boundaries = true;
   document.getElementById('boundariesControls').style.display = 'block';
   updateLegend();
 }
 
-/* Remove a layer and its source (if present) */
+/* REMOVE LAYER
+   --------------
+   Removes a layer and its source from the map.
+   Called when user unchecks a layer's toggle.
+   */
 function removeLayer(name) {
   const def = layerDefinitions[name];
-  if (map.getLayer(def.layerId)) map.removeLayer(def.layerId);
-  if (map.getSource(def.sourceId)) map.removeSource(def.sourceId);
+  
+  // Remove layer if it exists
+  if (map.getLayer(def.layerId)) {
+    map.removeLayer(def.layerId);
+  }
+  
+  // Remove source if it exists
+  if (map.getSource(def.sourceId)) {
+    map.removeSource(def.sourceId);
+  }
+  
+  // Update state
   enabledLayers[name] = false;
-  // hide controls
+  
+  // Hide layer controls in UI
   const c = document.getElementById(name + 'Controls');
   if (c) c.style.display = 'none';
-  updateLegend();
+  
+  updateLegend();                                 // Update legend to remove this layer's entry
 }
 
 /* ============================================================
-   UI wiring: checkboxes, sliders, selectors
+   USER INTERFACE EVENT HANDLERS
+   ============================================================
+   These event listeners connect UI controls (checkboxes, sliders, dropdowns)
+   to the map layer functions. When users interact with controls, these
+   handlers trigger the appropriate layer updates.
    ============================================================ */
 
-/* checkbox toggles */
+/* POPULATION DENSITY LAYER TOGGLE
+   ---------------------------------
+   When checkbox is checked: loads GeoJSON and applies Equal Interval classification (default)
+   When checkbox is unchecked: removes the layer from the map
+   */
 document.getElementById('popdensToggle').addEventListener('change', (e) => {
   if (e.target.checked) {
-    // load & classify (default equal interval because selector default is 'equal')
+    // User enabled the layer - load and classify with default settings
+    // Default: Equal Interval with 5 classes (as set in HTML dropdowns)
     loadPopDensLayer();
   } else {
+    // User disabled the layer - remove from map
     removeLayer('popdens');
   }
 });
 
-/* classification controls reapply when changed */
+/* CLASSIFICATION METHOD AND CLASS COUNT CHANGES
+   -----------------------------------------------
+   When user changes classification method or number of classes,
+   immediately reclassify the data (if layer is currently visible).
+   
+   STUDENTS: This is where you can experiment with how different
+   classification methods affect map interpretation.
+   */
 document.getElementById('classificationMethod').addEventListener('change', () => {
-  if (enabledLayers.popdens) applyPopDensClassification();
-});
-document.getElementById('numClasses').addEventListener('change', () => {
-  if (enabledLayers.popdens) applyPopDensClassification();
-});
-document.getElementById('popdensOpacity').addEventListener('input', (e) => {
-  document.getElementById('popdensOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.popdens.layerId)) {
-    map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-opacity', parseInt(e.target.value,10)/100);
+  if (enabledLayers.popdens) {
+    applyPopDensClassification();                 // Reclassify with new method
   }
 });
 
-/* POPMUN toggles & controls */
-document.getElementById('poipopToggle').addEventListener('change', (e) => {
-  if (e.target.checked) loadPoipopLayer();
-  else removeLayer('poipop');
+document.getElementById('numClasses').addEventListener('change', () => {
+  if (enabledLayers.popdens) {
+    applyPopDensClassification();                 // Reclassify with new class count
+  }
 });
+
+/* POPULATION DENSITY OPACITY SLIDER
+   -----------------------------------
+   Updates the transparency of the choropleth fill.
+   Also updates the label to show current percentage.
+   */
+document.getElementById('popdensOpacity').addEventListener('input', (e) => {
+  // Update label text
+  document.getElementById('popdensOpacityLabel').textContent = e.target.value + '%';
+  
+  // Update layer opacity if it exists
+  if (map.getLayer(layerDefinitions.popdens.layerId)) {
+    map.setPaintProperty(
+      layerDefinitions.popdens.layerId, 
+      'fill-opacity', 
+      parseInt(e.target.value,10)/100             // Convert percentage to 0-1 range
+    );
+  }
+});
+
+/* PROPORTIONAL CIRCLES (MUNICIPAL POPULATION) CONTROLS
+   ------------------------------------------------------
+   Handles toggle, radius adjustment, and opacity for the proportional circles layer.
+   */
+
+/* Layer toggle */
+document.getElementById('poipopToggle').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    loadPoipopLayer();                            // Load and display proportional circles
+  } else {
+    removeLayer('poipop');                        // Remove layer
+  }
+});
+
+/* Maximum radius slider
+   STUDENTS: This controls the size of the largest circle (highest population value).
+   Smaller values make all circles smaller; larger values make them bigger.
+   Range: 20-200 pixels, default: 70 pixels
+   */
 document.getElementById('maxRadius').addEventListener('input', (e) => {
+  // Update label
   document.getElementById('maxRadiusLabel').textContent = e.target.value;
+  
+  // Recalculate and update circle sizes
   updatePoipopRadius();
 });
+
+/* Circle opacity slider */
 document.getElementById('poipopOpacity').addEventListener('input', (e) => {
+  // Update label
   document.getElementById('poipopOpacityLabel').textContent = e.target.value + '%';
+  
+  // Update layer opacity if it exists
   if (map.getLayer(layerDefinitions.poipop.layerId)) {
-    map.setPaintProperty(layerDefinitions.poipop.layerId, 'circle-opacity', parseInt(e.target.value,10)/100);
+    map.setPaintProperty(
+      layerDefinitions.poipop.layerId, 
+      'circle-opacity', 
+      parseInt(e.target.value,10)/100
+    );
   }
 });
 
-/* contours toggle & opacity */
+/* CONTOURS LAYER CONTROLS
+   -------------------------
+   Handles toggle and opacity for population potential contours.
+   */
+
+/* Layer toggle */
 document.getElementById('contoursToggle').addEventListener('change', (e) => {
-  if (e.target.checked) loadContoursLayer();
-  else removeLayer('contours');
-});
-document.getElementById('contoursOpacity').addEventListener('input', (e)=>{
-  document.getElementById('contoursOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.contours.layerId)) {
-    map.setPaintProperty(layerDefinitions.contours.layerId, 'line-opacity', parseInt(e.target.value,10)/100);
+  if (e.target.checked) {
+    loadContoursLayer();                          // Load and display contours
+  } else {
+    removeLayer('contours');                      // Remove layer
   }
 });
 
-/* dots toggle & controls */
+/* Contours opacity slider */
+document.getElementById('contoursOpacity').addEventListener('input', (e) => {
+  // Update label
+  document.getElementById('contoursOpacityLabel').textContent = e.target.value + '%';
+  
+  // Update layer opacity if it exists
+  if (map.getLayer(layerDefinitions.contours.layerId)) {
+    map.setPaintProperty(
+      layerDefinitions.contours.layerId, 
+      'line-opacity', 
+      parseInt(e.target.value,10)/100
+    );
+  }
+});
+
+/* DOT DENSITY MAP CONTROLS
+   --------------------------
+   Handles toggle, dot size, and opacity for the dot density layer.
+   */
+
+/* Layer toggle */
 document.getElementById('dotsToggle').addEventListener('change', (e) => {
-  if (e.target.checked) loadDotsLayer();
-  else removeLayer('dots');
+  if (e.target.checked) {
+    loadDotsLayer();                              // Load and display dot density map
+  } else {
+    removeLayer('dots');                          // Remove layer
+  }
 });
-document.getElementById('dotSize').addEventListener('input', (e)=>{
+
+/* Dot size slider
+   STUDENTS: Adjusts the radius of each dot in pixels.
+   Larger dots are easier to see but may overlap more.
+   Range: 0.5-6 pixels, default: 1.9 pixels
+   */
+document.getElementById('dotSize').addEventListener('input', (e) => {
+  // Update label
   document.getElementById('dotSizeLabel').textContent = e.target.value;
-  if (map.getLayer(layerDefinitions.dots.layerId)) map.setPaintProperty(layerDefinitions.dots.layerId, 'circle-radius', parseFloat(e.target.value));
+  
+  // Update dot size if layer exists
+  if (map.getLayer(layerDefinitions.dots.layerId)) {
+    map.setPaintProperty(
+      layerDefinitions.dots.layerId, 
+      'circle-radius', 
+      parseFloat(e.target.value)
+    );
+  }
 });
-document.getElementById('dotsOpacity').addEventListener('input', (e)=>{
+
+/* Dot opacity slider */
+document.getElementById('dotsOpacity').addEventListener('input', (e) => {
+  // Update label
   document.getElementById('dotsOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.dots.layerId)) map.setPaintProperty(layerDefinitions.dots.layerId, 'circle-opacity', parseInt(e.target.value,10)/100);
+  
+  // Update layer opacity if layer exists
+  if (map.getLayer(layerDefinitions.dots.layerId)) {
+    map.setPaintProperty(
+      layerDefinitions.dots.layerId, 
+      'circle-opacity', 
+      parseInt(e.target.value,10)/100
+    );
+  }
 });
 
-/* boundaries toggle & opacity */
+/* BOUNDARIES LAYER CONTROLS
+   ---------------------------
+   Handles toggle and opacity for municipal boundary lines.
+   */
+
+/* Layer toggle */
 document.getElementById('boundariesToggle').addEventListener('change', (e) => {
-  if (e.target.checked) loadBoundariesLayer();
-  else removeLayer('boundaries');
-});
-document.getElementById('boundariesOpacity').addEventListener('input', (e)=>{
-  document.getElementById('boundariesOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.boundaries.layerId)) map.setPaintProperty(layerDefinitions.boundaries.layerId, 'line-opacity', parseInt(e.target.value,10)/100);
+  if (e.target.checked) {
+    loadBoundariesLayer();                        // Load and display boundaries
+  } else {
+    removeLayer('boundaries');                    // Remove layer
+  }
 });
 
-/* basemap selector: when style changes, re-add visible layers */
+/* Boundaries opacity slider */
+document.getElementById('boundariesOpacity').addEventListener('input', (e) => {
+  // Update label
+  document.getElementById('boundariesOpacityLabel').textContent = e.target.value + '%';
+  
+  // Update layer opacity if it exists
+  if (map.getLayer(layerDefinitions.boundaries.layerId)) {
+    map.setPaintProperty(
+      layerDefinitions.boundaries.layerId, 
+      'line-opacity', 
+      parseInt(e.target.value,10)/100
+    );
+  }
+});
+
+/* BASEMAP SWITCHER
+   ------------------
+   Allows switching between different Carto basemap styles.
+   When basemap changes, all visible layers are preserved and re-added.
+   
+   STUDENTS: You can add more basemap options by adding <option> elements
+   in the HTML section with different Carto style URLs.
+   */
 document.getElementById('basemapSelect').addEventListener('change', (e) => {
-  const style = e.target.value;
-  // remember which layers are enabled, set new style, then re-add after style loads
+  const style = e.target.value;                   // Get selected basemap URL
+  
+  // Save which layers are currently enabled
+  // (we need to re-add them after the style loads)
   const enabledSnapshot = {...enabledLayers};
+  
+  // Change the basemap style
   map.setStyle(style);
+  
+  // Wait for new style to load, then restore visible layers
   map.once('styledata', () => {
     for (const key in enabledSnapshot) {
       if (enabledSnapshot[key]) {
-        // re-run the same load operation (which adds source and layer)
+        // Re-add each enabled layer
         if (key === 'popdens') {
-          // if popdensData already cached, apply classification directly
-          if (popdensData) applyPopDensClassification();
-          else loadPopDensLayer();
-        } else if (key === 'poipop') loadPoipopLayer();
-        else if (key === 'contours') loadContoursLayer();
-        else if (key === 'dots') loadDotsLayer();
-        else if (key === 'boundaries') loadBoundariesLayer();
+          // Population density: if data is cached, apply classification directly
+          if (popdensData) {
+            applyPopDensClassification();
+          } else {
+            loadPopDensLayer();
+          }
+        } else if (key === 'poipop') {
+          loadPoipopLayer();
+        } else if (key === 'contours') {
+          loadContoursLayer();
+        } else if (key === 'dots') {
+          loadDotsLayer();
+        } else if (key === 'boundaries') {
+          loadBoundariesLayer();
+        }
       }
     }
   });
 });
 
 /* ============================================================
-   Legend generation (top-right)
-   - The legend updates dynamically based on active layers and
-     current classification / symbol sizes.
+   LEGEND GENERATION (Top-right panel)
+   ============================================================
+   The legend dynamically updates based on which layers are visible
+   and their current styling parameters. Each layer type generates
+   its own legend section.
+   
+   STUDENTS: The legend automatically reflects changes you make to:
+   - Classification method and number of classes (choropleth)
+   - Circle sizes (proportional symbols)
+   - Colors defined in the layer functions and colorSchemes
    ============================================================ */
 function updateLegend() {
   const legend = document.getElementById('legend');
   let html = '';
 
-  // POPDENS legend
+  /* POPULATION DENSITY CHOROPLETH LEGEND
+     -------------------------------------
+     Displays color-coded class intervals.
+     
+     STUDENTS: To modify legend appearance:
+     - Change colors in the colorSchemes object (top of script)
+     - Modify HTML structure below to change layout
+     - Class intervals update automatically when you change classification method
+     */
   if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
+    
     html += `<div class="legend-title">Population density (people / km²)</div>`;
-    // first interval
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>0 – ${breaks[0]}</div></div>`;
-    // middle intervals
-    for (let i=0;i<breaks.length-1;i++){
-      html += `<div class="legend-row"><div class="legend-color" style="background:${colors[i+1]}"></div><div>${breaks[i]} – ${breaks[i+1]}</div></div>`;
+    
+    // First interval: < first break
+    // STUDENTS: The first class label format is changed to show "less than" (<)
+    html += `<div class="legend-row">
+      <div class="legend-color" style="background:${colors[0]}"></div>
+      <div>&lt; ${breaks[0]}</div>
+    </div>`;
+    
+    // Middle intervals: between consecutive breaks
+    for (let i=0; i<breaks.length-1; i++){
+      html += `<div class="legend-row">
+        <div class="legend-color" style="background:${colors[i+1]}"></div>
+        <div>${breaks[i]} – ${breaks[i+1]}</div>
+      </div>`;
     }
-    // last
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[colors.length-1]}"></div><div>${breaks[breaks.length-1]}+</div></div>`;
+    
+    // Last interval: > last break
+    // STUDENTS: The last class label format is changed to show "greater than" (>)
+    html += `<div class="legend-row">
+      <div class="legend-color" style="background:${colors[colors.length-1]}"></div>
+      <div>&gt; ${breaks[breaks.length-1]}</div>
+    </div>`;
+    
     html += '<hr>';
   }
 
-  // POPMUN legend (centered, bottom aligned circles)
+  /* PROPORTIONAL CIRCLES LEGEND
+     ------------------------------
+     Displays three reference circles of different sizes to show scaling.
+     Circles are bottom-aligned for visual comparison.
+     
+     STUDENTS: To modify the legend:
+     1. Change reference population values (vSmall, vMed, vLarge)
+     2. Adjust circle fill colors in the SVG <circle> elements
+     3. The actual circle sizes update automatically based on your maxRadius slider
+     */
   if (enabledLayers.poipop) {
-    const maxR = parseInt(document.getElementById('maxRadius').value,10);
-    const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;
-
-    // choose three reference pop values (1k, 10k, 100k) — adjust if your dataset uses different ranges
-    const vSmall = 1000, vMed = 10000, vLarge = 100000;
+    const maxR = parseInt(document.getElementById('maxRadius').value,10); // Current max radius from slider
+    const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;      // Max population value
+    
+    // Define three reference population values for the legend
+    // STUDENTS: Adjust these values to match typical population ranges in your data
+    const vSmall = 1000;                          // Small municipality
+    const vMed = 10000;                           // Medium municipality
+    const vLarge = 100000;                        // Large municipality
+    
+    // Calculate radius for each reference value using Flannery scaling
     const r1 = Math.max(2, Math.pow(vSmall / maxVal, 0.57) * maxR);
     const r2 = Math.max(2, Math.pow(vMed / maxVal, 0.57) * maxR);
     const r3 = Math.max(2, Math.pow(vLarge / maxVal, 0.57) * maxR);
-    // compute svg height so circles are bottom-aligned
+    
+    // Calculate SVG height to accommodate largest circle
     const svgHeight = Math.round(Math.max(r3*2 + 20, 120));
-    const cx = 110;
-    const baseY = svgHeight - 10; // bottom alignment
+    const cx = 110;                               // Horizontal center position
+    const baseY = svgHeight - 10;                 // Bottom alignment position
 
     html += `<div class="legend-title">Municipal population (proportional circles)</div>`;
     html += `<div style="text-align:center">`;
     html += `<svg width="240" height="${svgHeight}">`;
-    // small
+    
+    // Small circle (1,000 people)
     html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r1*2) - 4}" text-anchor="middle" font-size="11">1,000</text>`;
-    // medium
+    
+    // Medium circle (10,000 people)
     html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r2*2) - 4}" text-anchor="middle" font-size="11">10,000</text>`;
-    // large
+    
+    // Large circle (100,000 people)
     html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
+    
+    // STUDENTS: To change circle colors in legend, modify the fill and stroke attributes above
+    // Example: fill="rgba(0,0,255,0.25)" for blue circles
+    
     html += `</svg>`;
     html += `</div><hr>`;
   }
 
-  // Contours legend: dark red, widths vary by Id (1 primary thicker)
+  /* CONTOURS LEGEND
+     -----------------
+     Shows line styles for primary and secondary contours.
+     
+     STUDENTS: To modify:
+     - Change stroke color in the SVG <line> elements (matches map layer color)
+     - Adjust stroke-width values (should match widthExpr in loadContoursLayer)
+     */
   if (enabledLayers.contours) {
     html += `<div class="legend-title">Population potential contours</div>`;
-    html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
-    html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="1.2"/></svg><div>Secondary (Id = 2)</div></div>`;
+    
+    // Primary contour (ID = 1, thicker line)
+    html += `<div class="legend-row">
+      <svg class="legend-line">
+        <line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/>
+      </svg>
+      <div>Primary (Id = 1)</div>
+    </div>`;
+    
+    // Secondary contour (ID = 2, thinner line)
+    html += `<div class="legend-row">
+      <svg class="legend-line">
+        <line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="1.2"/>
+      </svg>
+      <div>Secondary (Id = 2)</div>
+    </div>`;
+    
+    // STUDENTS: To change contour color in legend, modify stroke="#8B0000" above
+    // (this should match the color variable in loadContoursLayer function)
+    
     html += '<hr>';
   }
 
-  // Dot map legend
+  /* DOT DENSITY LEGEND
+     --------------------
+     Shows a single dot with current size and explains what it represents.
+     
+     STUDENTS: To modify:
+     1. Change the dot color by modifying fill="#000000"
+        (should match 'circle-color' in loadDotsLayer function)
+     2. Update the text "1 dot = 500 people" to match your actual dot-to-person ratio
+     */
   if (enabledLayers.dots) {
     html += `<div class="legend-title">Dot density</div>`;
-    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people (example)</div></div>`;
+    html += `<div class="legend-row">
+      <svg width="30" height="24">
+        <circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/>
+      </svg>
+      <div>1 dot = 500 people (example)</div>
+    </div>`;
+    // STUDENTS: Change "500 people" above to match your actual dot density ratio
     html += '<hr>';
   }
 
-  // Boundaries legend
+  /* BOUNDARIES LEGEND
+     -------------------
+     Shows the boundary line style.
+     
+     STUDENTS: To modify line color, change stroke="#bbbbbb" below
+     (should match 'line-color' in loadBoundariesLayer function)
+     */
   if (enabledLayers.boundaries) {
-    html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg><div>Municipal boundaries</div></div>`;
+    html += `<div class="legend-row">
+      <svg width="40" height="18">
+        <line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/>
+      </svg>
+      <div>Municipal boundaries</div>
+    </div>`;
   }
 
+  // Display the legend if there's any content, otherwise hide it
   if (html.length) {
     legend.innerHTML = html;
     legend.style.display = 'block';
@@ -754,63 +1285,125 @@ function updateLegend() {
 }
 
 /* ============================================================
-   Add-on: show/hide the layer controls block when toggles checked
-   (so students see the sliders only when layer is active)
+   UI VISIBILITY MANAGEMENT
+   ============================================================
+   Controls when layer settings panels are shown/hidden based on
+   whether the layer is enabled.
    ============================================================ */
+
+/* Show or hide layer control panels based on checkbox state
+   STUDENTS: This ensures settings only appear when relevant
+   */
 function showHideControls() {
   Object.keys(enabledLayers).forEach(k => {
     const checkbox = document.getElementById(k + 'Toggle');
     const controls = document.getElementById(k + 'Controls');
     if (!controls) return;
+    // Show controls if checkbox is checked, hide if unchecked
     controls.style.display = checkbox.checked ? 'block' : 'none';
   });
 }
-// run initially to ensure UI matches initial state (all unchecked -> hidden)
+
+// Run on page load to ensure UI matches initial state (all layers unchecked = all controls hidden)
 showHideControls();
 
 /* ============================================================
-   Recompute legend when interaction changes
-   (listen to inputs that change visualization)
+   LEGEND UPDATE TRIGGERS
+   ============================================================
+   These listeners ensure the legend updates whenever users change
+   settings that affect visualization appearance.
    ============================================================ */
+
+/* Update legend when sliders or dropdowns change
+   STUDENTS: These inputs affect how data is displayed, so legend must update
+   */
 const uiInputs = [
-  'classificationMethod','numClasses','popdensOpacity',
-  'maxRadius','poipopOpacity','contoursOpacity',
-  'dotSize','dotsOpacity','boundariesOpacity'
+  'classificationMethod',  // Changes choropleth class breaks
+  'numClasses',           // Changes number of choropleth classes
+  'popdensOpacity',       // Changes choropleth transparency
+  'maxRadius',            // Changes proportional circle sizes
+  'poipopOpacity',        // Changes circle transparency
+  'contoursOpacity',      // Changes contour line transparency
+  'dotSize',              // Changes dot size
+  'dotsOpacity',          // Changes dot transparency
+  'boundariesOpacity'     // Changes boundary transparency
 ];
+
 uiInputs.forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', () => {
-    // update label values (some done elsewhere already)
-    updateLegend();
+    updateLegend();                               // Regenerate legend with new values
   });
 });
 
-// also update legend when checkboxes change
+/* Update legend and control visibility when layer checkboxes change */
 ['popdensToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
-    showHideControls();
-    updateLegend();
+    showHideControls();                           // Show/hide relevant control panels
+    updateLegend();                               // Update legend to add/remove layer
   });
 });
 
 /* ============================================================
-   Map load: nothing is enabled by default. Students should
-   enable layers via the left panel checkboxes.
+   MAP INITIALIZATION
+   ============================================================
+   This event fires when the map has fully loaded and is ready.
+   
+   STUDENTS: By default, NO layers are enabled at startup.
+   You must manually check the layer toggles in the left panel to display data.
+   
+   If you want a layer to appear automatically on load:
+   1. Uncomment the lines below for your desired layer
+   2. Set the corresponding checkbox to checked
+   
+   Example to auto-load population density:
+   document.getElementById('popdensToggle').checked = true;
+   loadPopDensLayer();
    ============================================================ */
 map.on('load', () => {
-  // Nothing pre-enabled — this lets students toggle layers manually.
-  // If you want a default layer visible at load, call the loader here,
-  // e.g.: document.getElementById('popdensToggle').checked = true; loadPopDensLayer();
+  // Default: No layers are enabled at startup
+  // Students enable layers manually using the checkboxes
+  
+  // STUDENTS: To auto-enable a layer at startup, uncomment the relevant lines:
+  
+  // Auto-enable population density choropleth:
+  // document.getElementById('popdensToggle').checked = true;
+  // loadPopDensLayer();
+  
+  // Auto-enable proportional circles:
+  // document.getElementById('poipopToggle').checked = true;
+  // loadPoipopLayer();
+  
+  // Auto-enable contours:
+  // document.getElementById('contoursToggle').checked = true;
+  // loadContoursLayer();
+  
+  // Auto-enable dot density:
+  // document.getElementById('dotsToggle').checked = true;
+  // loadDotsLayer();
+  
+  // Auto-enable boundaries:
+  // document.getElementById('boundariesToggle').checked = true;
+  // loadBoundariesLayer();
 });
 
 /* ============================================================
-   Helpful console messages
+   CONSOLE MESSAGES (for debugging and setup verification)
    ============================================================ */
-console.log('Viewer ready. Ensure your GeoJSON files are in "data/" next to this HTML file.');
-console.log('If using GitHub Pages, files will be available at https://<username>.github.io/<repo>/data/<file>.geojson');
+console.log('========================================');
+console.log('Thessaly Cartography Viewer - Ready');
+console.log('========================================');
+console.log('Setup checklist:');
+console.log('1. Ensure GeoJSON files are in "data/" folder relative to this HTML file');
+console.log('2. Update file paths in layerDefinitions if your filenames differ');
+console.log('3. If using GitHub Pages, files will be at:');
+console.log('   https://<username>.github.io/<repo>/data/<file>.geojson');
+console.log('========================================');
+console.log('Current layer definitions:');
+console.log(layerDefinitions);
+console.log('========================================');
 
 </script>
 </body>
 </html>
-
