@@ -55,10 +55,12 @@
     border-radius: 6px;
     max-width: 360px;
     max-height: 85vh;
-    overflow-y: auto;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     display: none;
-    resize: both; /* STUDENTS: Allows diagonal resizing of legend panel */
+    resize: both; /* STUDENTS: Allows diagonal resizing by dragging the bottom-right corner */
+	overflow: hidden;
+    min-width: 200px; /* Minimum width to prevent over-shrinking */
+    min-height: 100px; /* Minimum height to prevent over-shrinking */
   }
   .legend-row { display:flex; align-items:center; margin-bottom:8px; }
   .legend-color { width:20px; height:20px; margin-right:8px; border-radius:3px; flex:none; }
@@ -68,6 +70,8 @@
   /* small helpers */
   .control-value { font-weight:700; margin-left:6px; color:#333; }
   hr { border: none; border-top: 1px solid #eee; margin:8px 0; }
+  
+
 </style>
 </head>
 
@@ -1154,11 +1158,11 @@ function updateLegend() {
 
   /* PROPORTIONAL CIRCLES LEGEND
      ------------------------------
-     Displays three reference circles of different sizes to show scaling.
+     Displays four reference circles of different sizes to show scaling.
      Circles are bottom-aligned for visual comparison.
      
      STUDENTS: To modify the legend:
-     1. Change reference population values (vSmall, vMed, vLarge)
+     1. Change reference population values (vSmall, vMed, vMedLarge, vLarge)
      2. Adjust circle fill colors in the SVG <circle> elements
      3. The actual circle sizes update automatically based on your maxRadius slider
      */
@@ -1166,19 +1170,22 @@ function updateLegend() {
     const maxR = parseInt(document.getElementById('maxRadius').value,10); // Current max radius from slider
     const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;      // Max population value
     
-    // Define three reference population values for the legend
+    // Define four reference population values for the legend
     // STUDENTS: Adjust these values to match typical population ranges in your data
     const vSmall = 1000;                          // Small municipality
     const vMed = 10000;                           // Medium municipality
+    const vMedLarge = 50000;                      // Medium-large municipality
     const vLarge = 100000;                        // Large municipality
     
     // Calculate radius for each reference value using Flannery scaling
+    // Formula: radius = (value / maxValue)^0.57 × maxRadius
     const r1 = Math.max(2, Math.pow(vSmall / maxVal, 0.57) * maxR);
     const r2 = Math.max(2, Math.pow(vMed / maxVal, 0.57) * maxR);
-    const r3 = Math.max(2, Math.pow(vLarge / maxVal, 0.57) * maxR);
+    const r3 = Math.max(2, Math.pow(vMedLarge / maxVal, 0.57) * maxR);
+    const r4 = Math.max(2, Math.pow(vLarge / maxVal, 0.57) * maxR);
     
     // Calculate SVG height to accommodate largest circle
-    const svgHeight = Math.round(Math.max(r3*2 + 20, 120));
+    const svgHeight = Math.round(Math.max(r4*2 + 20, 140));
     const cx = 110;                               // Horizontal center position
     const baseY = svgHeight - 10;                 // Bottom alignment position
 
@@ -1194,9 +1201,13 @@ function updateLegend() {
     html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r2*2) - 4}" text-anchor="middle" font-size="11">10,000</text>`;
     
-    // Large circle (100,000 people)
+    // Medium-large circle (50,000 people)
     html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
-    html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
+    html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">50,000</text>`;
+    
+    // Large circle (100,000 people)
+    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
+    html += `<text x="${cx}" y="${baseY - (r4*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
     
     // STUDENTS: To change circle colors in legend, modify the fill and stroke attributes above
     // Example: fill="rgba(0,0,255,0.25)" for blue circles
