@@ -1149,15 +1149,40 @@ function updateLegend() {
   const legend = document.getElementById('legend');
   let html = '';
 
-  /* POPULATION DENSITY CHOROPLETH LEGEND
-     -------------------------------------
-     Displays color-coded class intervals.
+  /* ============================================================
+     LEGEND HEADER (Fixed title and credits)
+     ============================================================
+     STUDENTS: Modify the text below to customize your map's title and credits.
      
-     STUDENTS: To modify legend appearance:
-     - Change colors in the colorSchemes object (top of script)
-     - Modify HTML structure below to change layout
-     - Class intervals update automatically when you change classification method
-     */
+     To modify:
+     1. Change "THESSALY POPULATION" to your study area name
+     2. Update the map types listed in the subtitle
+     3. Change "Loukas Katikas" to your name
+     4. Update university, school, laboratory, course, and year information
+     5. Adjust styling in the CSS section above (.legend-map-title, .legend-subtitle, .legend-author)
+     
+     To change fonts:
+     - Title size: modify .legend-map-title font-size in CSS
+     - Subtitle size: modify .legend-subtitle font-size in CSS
+     - Author size: modify .legend-author font-size in CSS
+     - Make title larger/smaller by changing the font-size value (current: 15px)
+     ============================================================ */
+  html += `
+    <div class="legend-header">
+      <div class="legend-map-title">THESSALY POPULATION</div>
+      <div class="legend-subtitle">
+        (Choropleth map, Proportional symbols map,<br>
+        Isopleth contour map and Dot map)
+      </div>
+      <div class="legend-author">
+        <strong>Produced by:</strong> Loukas Katikas<br>
+        National Technical University of Athens (NTUA)<br>
+        School of Rural, Surveying & Geoinformatics Engineering<br>
+        Cartography Laboratory<br>
+        Thematic Cartography, Academic Year 2025-2026
+      </div>
+    </div>
+  `;
   if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
@@ -1451,5 +1476,6 @@ console.log('========================================');
 </script>
 </body>
 </html>
+
 
 
