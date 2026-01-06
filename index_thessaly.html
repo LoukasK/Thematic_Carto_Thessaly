@@ -58,10 +58,43 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     display: none;
     resize: both; /* STUDENTS: Allows diagonal resizing by dragging the bottom-right corner */
-	overflow: hidden;
+	overflow: auto; /* STUDENTS: Changed to auto to allow scrolling when content exceeds max-height */
     min-width: 200px; /* Minimum width to prevent over-shrinking */
     min-height: 100px; /* Minimum height to prevent over-shrinking */
   }
+  
+  /* STUDENTS: Header styles for map title and credits - modify these to customize appearance */
+  .legend-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #333; /* STUDENTS: Change color for different separator line */
+  }
+  .legend-map-title {
+    font-size: 15px; /* STUDENTS: Adjust size for main title */
+    font-weight: 700; /* STUDENTS: 700 = bold, 400 = normal */
+    color: #000; /* STUDENTS: Change hex code for different title color */
+    margin-bottom: 10px;
+    line-height: 1.4;
+    text-align: center; /* STUDENTS: Options: left, center, right */
+  }
+  .legend-subtitle {
+    font-size: 11px; /* STUDENTS: Adjust size for subtitle/map types */
+    font-style: italic; /* STUDENTS: Remove this line for non-italic text */
+    color: #333; /* STUDENTS: Slightly lighter than title */
+    margin-bottom: 10px;
+    line-height: 1.3;
+    text-align: center;
+  }
+  .legend-author {
+    font-size: 10px; /* STUDENTS: Adjust size for author information */
+    color: #555; /* STUDENTS: Lighter color for secondary information */
+    line-height: 1.4;
+    text-align: left; /* STUDENTS: Author info typically left-aligned */
+  }
+  .legend-author strong {
+    font-weight: 700; /* STUDENTS: Makes "Produced by:" bold */
+  }
+  
   .legend-row { display:flex; align-items:center; margin-bottom:8px; }
   .legend-color { width:20px; height:20px; margin-right:8px; border-radius:3px; flex:none; }
   .legend-line { width:40px; height:14px; margin-right:8px; flex:none; }
@@ -1418,4 +1451,5 @@ console.log('========================================');
 </script>
 </body>
 </html>
+
 
