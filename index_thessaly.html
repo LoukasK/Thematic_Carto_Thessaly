@@ -487,7 +487,7 @@ function loadContoursLayer() {
   ensureSource(def.sourceId, def.url);
 
   const widthExpr = ['case', ['==', ['get', 'ID'], 1], 3, 1.2];
-  const color = '#8B0000';  // 🎨 STUDENTS: Change contour line color
+  const color = '#8B0000';  // 🗺️ OPTIONAL: Change contour line color  // 🎨 STUDENTS: Change contour line color
 
   if (!map.getLayer(def.layerId)) {
     map.addLayer({
@@ -804,9 +804,6 @@ console.log(layerDefinitions);
      ============================================================ -->
 </body>
 </html>
-
-
-
 
 
 
