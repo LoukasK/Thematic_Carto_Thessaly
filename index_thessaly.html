@@ -682,7 +682,7 @@ function updateLegend() {
 
   if (enabledLayers.dots) {
     html += `<div class="legend-title">Dot density</div>`;
-    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people (example)</div></div>`;
+    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
     // 🗺️ STUDENTS: Change fill="#000" for dot color and "500 people" to match your data
     html += '<hr>';
   }
@@ -865,6 +865,7 @@ CUSTOM CLASSIFICATION:
 - Edit the customColors array to match (6 colors for 5 breaks)
 - The number of classes selector will be disabled when custom is active
 */
+
 
 
 
