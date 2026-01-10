@@ -1,3 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Thessaly Cartography – Interactive Map</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+<!--
+MapLibre GL CSS
+- Provides the visual styling for the map
+- Styles map controls (zoom buttons, attribution, scale bar)
+- Ensures correct layout and appearance of the map canvas
+-->
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+<!--
+MapLibre GL JavaScript
+- Core MapLibre library for web mapping
+- Handles map rendering using WebGL
+- Enables interaction (zoom, pan, rotation)
+- Supports loading layers, GeoJSON data, and user events
+-->
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
 <!-- ============================================================
      CSS STYLING SECTION
      ============================================================
@@ -842,3 +865,4 @@ CUSTOM CLASSIFICATION:
 - Edit the customColors array to match (6 colors for 5 breaks)
 - The number of classes selector will be disabled when custom is active
 */
+
