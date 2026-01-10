@@ -82,7 +82,7 @@ MapLibre GL JavaScript
     min-height: 100px;
   }
   
-  /* 🌍 STUDENTS - MODIFY HEADER STYLES: Change title/subtitle/author font sizes and colors here */
+  /* 🌍 STUDENTS - MODIFY HEADER STYLES */
   .legend-header {
     margin-bottom: 16px;
     padding-bottom: 12px;
@@ -121,15 +121,9 @@ MapLibre GL JavaScript
   .control-value { font-weight:700; margin-left:6px; color:#333; }
   hr { border: none; border-top: 1px solid #eee; margin:8px 0; }
 </style>
-<!-- ============================================================
-     END OF CSS STYLING SECTION
-     ============================================================ -->
 </head>
 <body>
 
-<!-- ============================================================
-     HTML STRUCTURE SECTION - USER INTERFACE ELEMENTS
-     ============================================================ -->
 <div id="styleSelector">
   <select id="basemapSelect">
     <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
@@ -140,14 +134,14 @@ MapLibre GL JavaScript
 <div id="controls">
   <strong>Layers</strong><br><br>
 
-  <input type="checkbox" id="popdensToggle"> <strong>Population Density (POPDENS)</strong><br>
+  <input type="checkbox" id="popdensToggle"> <strong>Population Density (Choropleth Map)</strong><br>
   <div class="layer-controls" id="popdensControls">
     <label>Classification method:
       <select id="classificationMethod">
         <option value="equal" selected>Equal interval (default)</option>
         <option value="quantile">Quantiles</option>
         <option value="natural">Natural breaks (Jenks)</option>
-        <option value="custom">Custom intervals</option>
+        <option value="custom">🌍 Custom intervals</option>
       </select>
     </label>
     <label id="numClassesLabel">Number of classes:
@@ -162,13 +156,35 @@ MapLibre GL JavaScript
     <label>Opacity: <span id="popdensOpacityLabel" class="control-value">60%</span>
       <input type="range" id="popdensOpacity" min="0" max="100" value="60">
     </label>
-    <small style="display:block;margin-top:6px;color:#555">
-      <strong>Note (students):</strong> change classification method & number of classes to see how choropleth interpretation changes.
-    </small>
   </div>
   <hr>
 
-  <input type="checkbox" id="poipopToggle"> <strong>Municipal Population (POPMUN)</strong><br>
+  <input type="checkbox" id="denscoverToggle"> <strong>Population Density (Dasymmetric Map)</strong><br>
+  <div class="layer-controls" id="denscoverControls">
+    <label>Classification method:
+      <select id="denscoverClassificationMethod">
+        <option value="equal" selected>Equal interval (default)</option>
+        <option value="quantile">Quantiles</option>
+        <option value="natural">Natural breaks (Jenks)</option>
+        <option value="custom">🌍 Custom intervals</option>
+      </select>
+    </label>
+    <label id="denscoverNumClassesLabel">Number of classes:
+      <select id="denscoverNumClasses">
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5" selected>5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+      </select>
+    </label>
+    <label>Opacity: <span id="denscoverOpacityLabel" class="control-value">60%</span>
+      <input type="range" id="denscoverOpacity" min="0" max="100" value="60">
+    </label>
+  </div>
+  <hr>
+
+  <input type="checkbox" id="poipopToggle"> <strong>Population (Proportional symbols)</strong><br>
   <div class="layer-controls" id="poipopControls">
     <label>Maximum circle radius (px): <span id="maxRadiusLabel" class="control-value">70</span>
       <input type="range" id="maxRadius" min="20" max="200" value="70">
@@ -182,18 +198,15 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
-  <input type="checkbox" id="contoursToggle"> <strong>Population contours (200k / 400k)</strong><br>
+  <input type="checkbox" id="contoursToggle"> <strong>Population dynamic contours (Isopleths map)</strong><br>
   <div class="layer-controls" id="contoursControls">
     <label>Opacity (contours): <span id="contoursOpacityLabel" class="control-value">80%</span>
       <input type="range" id="contoursOpacity" min="0" max="100" value="80">
     </label>
-    <small style="display:block;margin-top:6px;color:#555">
-      Contours are colored dark red. Line width: <code>ID=1</code> (primary), <code>ID=2</code> (secondary).
-    </small>
   </div>
   <hr>
 
-  <input type="checkbox" id="dotsToggle"> <strong>Dot map</strong><br>
+  <input type="checkbox" id="dotsToggle"> <strong>Population (Dot map)</strong><br>
   <div class="layer-controls" id="dotsControls">
     <label>Dot size (px): <span id="dotSizeLabel" class="control-value">1.9</span>
       <input type="range" id="dotSize" min="0.5" max="6" step="0.1" value="1.9">
@@ -214,20 +227,14 @@ MapLibre GL JavaScript
 
   <div style="font-size:12px;color:#555">
     <strong>Data notes (students)</strong><br>
-    - All GeoJSONs are expected in <code>data/</code> relative to this HTML file.<br>
-    - Fields used: <code>POPDENS</code> (choropleth), <code>POPMUN</code> (proportional circles), <code>Id</code> (contours).
+    - All GeoJSONs expected in <code>data/</code> folder<br>
+    - Fields: <code>POPDENS</code>, <code>DENS_COVER</code>, <code>POPMUN</code>, <code>ID</code>
   </div>
 </div>
 
 <div id="legend"></div>
 <div id="map"></div>
-<!-- ============================================================
-     END OF HTML STRUCTURE SECTION
-     ============================================================ -->
 
-<!-- ============================================================
-     JAVASCRIPT SECTION - APPLICATION LOGIC (PART 1)
-     ============================================================ -->
 <script>
 
 /* 🌍 STUDENTS - MODIFY MAP CENTER AND ZOOM */
@@ -245,6 +252,12 @@ const layerDefinitions = {
     layerId: 'popdens-layer',
     url: 'data/dimoi_popdens_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
     dataField: 'POPDENS'                     // 🌍 STUDENTS: Change field name to match your data
+  },
+  denscover: {
+    sourceId: 'denscover-src',
+    layerId: 'denscover-layer',
+    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
+    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Change field name to match your data
   },
   poipop: {
     sourceId: 'poipop-src',
@@ -271,41 +284,41 @@ const layerDefinitions = {
 };
 
 let popdensData = null;
+let denscoverData = null;
 const enabledLayers = { 
   popdens: false,
+  denscover: false,
   poipop: false,
   contours: false,
   dots: false,
   boundaries: false
 };
 
-/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES */
+/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS) */
 const colorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],           // 🗺️ STUDENTS: Change colors for 3-class scheme
-  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'], // 🗺️ STUDENTS: Change colors for 4-class scheme
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'], // 🗺️ STUDENTS: Change colors (default)
+  3: ['#ffcccc', '#ff6666', '#990000'],
+  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
+  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],
   6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
   7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
-  
-  // 🗺️ Alternative color schemes you can use:
-  // Blue: 5: ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c']
-  // Green: 5: ['#edf8e9', '#bae4b3', '#74c476', '#31a354', '#006d2c']
 };
 
-/* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS */
-// Custom breaks are the upper limit of each class interval
-// Example: [50, 100, 200, 500] creates 5 classes:
-//   Class 1: < 50
-//   Class 2: 50 - 100
-//   Class 3: 100 - 200
-//   Class 4: 200 - 500
-//   Class 5: > 500
-const customBreaks = [30, 75, 150, 300, 600];  // 🌍 STUDENTS: Change these values for your custom classification
+/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER) */
+const denscoverColorSchemes = {
+  3: ['#d0e5f5', '#4a90c4', '#0d4a70'],
+  4: ['#d0e5f5', '#7db3d8', '#2e6fa8', '#0d4a70'],
+  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],
+  6: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#4a90c4', '#2e6fa8', '#0d4a70'],
+  7: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#5da3ce', '#4a90c4', '#2e6fa8', '#0d4a70']
+};
 
-/* 🌍 STUDENTS - DEFINE COLORS FOR YOUR CUSTOM CLASSIFICATION */
-// Must have one more color than the number of breaks
-// Example: 5 breaks = 6 colors
-const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];  // 🗺️ STUDENTS: Change colors for custom scheme
+/* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR POPDENS */
+const customBreaks = [30, 75, 150, 300, 600];
+const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];
+
+/* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
+const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
+const denscoverCustomColors = ['#f0f9ff', '#c6dbef', '#6baed6', '#2171b5', '#08519c', '#08306b'];
 
 function equalIntervalBreaks(sorted, n) {
   const min = sorted[0];
@@ -374,17 +387,17 @@ function jenksBreaks(sorted, numClasses) {
   return breaks.reverse().map(b => Number(b.toFixed(2)));
 }
 
-function calculateBreaks(values, numClasses, method) {
+function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray) {
   const sorted = values.filter(v => v != null && !isNaN(v)).sort((a,b)=>a-b);
   if (sorted.length === 0) return [];
   if (method === 'equal') return equalIntervalBreaks(sorted, numClasses);
   if (method === 'quantile') return quantileBreaks(sorted, numClasses);
   if (method === 'natural') return jenksBreaks(sorted, numClasses);
-  if (method === 'custom') return customBreaks;
+  if (method === 'custom') return customBreaksArray;
   return equalIntervalBreaks(sorted, numClasses);
 }
 
-function createStepExpression(breaks, colors, field='POPDENS') {
+function createStepExpression(breaks, colors, field) {
   const expr = ['step', ['get', field], colors[0]];
   for (let i=0; i<breaks.length; i++){
     expr.push(breaks[i]);
@@ -402,7 +415,6 @@ function ensureSource(id, urlOrGeojson) {
     }
   }
 }
-// This part contains all the functions for loading and managing map layers
 
 function applyPopDensClassification() {
   if (!popdensData) {
@@ -416,19 +428,15 @@ function applyPopDensClassification() {
   let colors, breaks;
   
   if (method === 'custom') {
-    // Use custom breaks and colors
     breaks = customBreaks;
     colors = customColors;
   } else {
-    // Use standard color schemes
     colors = colorSchemes[nclasses] || colorSchemes[5];
-    // 🌍 STUDENTS: Extract values using the dataField specified in layerDefinitions
     const values = popdensData.features.map(f => parseFloat(f.properties[layerDefinitions.popdens.dataField]));
-    breaks = calculateBreaks(values, nclasses, method);
+    breaks = calculateBreaks(values, nclasses, method, false, null);
   }
 
   const expr = createStepExpression(breaks, colors, layerDefinitions.popdens.dataField);
-
   ensureSource(layerDefinitions.popdens.sourceId, popdensData);
 
   if (map.getLayer(layerDefinitions.popdens.layerId)) {
@@ -447,7 +455,6 @@ function applyPopDensClassification() {
 
   layerDefinitions.popdens.breaks = breaks;
   layerDefinitions.popdens.colors = colors;
-  
   enabledLayers.popdens = true;
   document.getElementById('popdensControls').style.display = 'block';
   updateLegend();
@@ -462,7 +469,64 @@ function loadPopDensLayer() {
     })
     .catch(err => {
       console.error('Failed to load POPDENS:', err);
-      alert('Error loading POPDENS geojson. Check path in layerDefinitions.popdens.url');
+      alert('Error loading POPDENS geojson.');
+    });
+}
+
+function applyDensCoverClassification() {
+  if (!denscoverData) {
+    console.warn('No denscoverData cached.');
+    return;
+  }
+  
+  const method = document.getElementById('denscoverClassificationMethod').value;
+  const nclasses = parseInt(document.getElementById('denscoverNumClasses').value,10);
+  
+  let colors, breaks;
+  
+  if (method === 'custom') {
+    breaks = denscoverCustomBreaks;
+    colors = denscoverCustomColors;
+  } else {
+    colors = denscoverColorSchemes[nclasses] || denscoverColorSchemes[5];
+    const values = denscoverData.features.map(f => parseFloat(f.properties[layerDefinitions.denscover.dataField]));
+    breaks = calculateBreaks(values, nclasses, method, false, null);
+  }
+
+  const expr = createStepExpression(breaks, colors, layerDefinitions.denscover.dataField);
+  ensureSource(layerDefinitions.denscover.sourceId, denscoverData);
+
+  if (map.getLayer(layerDefinitions.denscover.layerId)) {
+    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-color', expr);
+  } else {
+    map.addLayer({
+      id: layerDefinitions.denscover.layerId,
+      type: 'fill',
+      source: layerDefinitions.denscover.sourceId,
+      paint: {
+        'fill-color': expr,
+        'fill-opacity': parseInt(document.getElementById('denscoverOpacity').value,10)/100
+      }
+    });
+  }
+
+  layerDefinitions.denscover.breaks = breaks;
+  layerDefinitions.denscover.colors = colors;
+  enabledLayers.denscover = true;
+  document.getElementById('denscoverControls').style.display = 'block';
+  updateLegend();
+}
+
+function loadDensCoverLayer() {
+  fetch(layerDefinitions.denscover.url)
+    .then(r => r.json())
+    .then(gj => {
+      denscoverData = gj;
+      applyDensCoverClassification();
+    })
+    .catch(err => {
+      console.error('Failed to load DENS_COVER:', err);
+      alert('Error loading DENS_COVER geojson.');
     });
 }
 
@@ -541,7 +605,7 @@ function loadDotsLayer() {
   const def = layerDefinitions.dots;
   ensureSource(def.sourceId, def.url);
 
-  const dotSize = parseFloat(document.getElementById('dotSize').value);  // 🌍 STUDENTS: Default dot size
+  const dotSize = parseFloat(document.getElementById('dotSize').value);
   const opacity = parseInt(document.getElementById('dotsOpacity').value,10)/100;
 
   if (!map.getLayer(def.layerId)) {
@@ -626,7 +690,22 @@ function updateLegend() {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
     
-    html += `<div class="legend-title">Population density (people / km²)</div>`;
+    html += `<div class="legend-title">Choropleth map (people / km²)</div>`;
+    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
+    
+    for (let i=0; i<breaks.length-1; i++){
+      html += `<div class="legend-row"><div class="legend-color" style="background:${colors[i+1]}"></div><div>${breaks[i]} – ${breaks[i+1]}</div></div>`;
+    }
+    
+    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[colors.length-1]}"></div><div>&gt; ${breaks[breaks.length-1]}</div></div>`;
+    html += '<hr>';
+  }
+
+  if (enabledLayers.denscover && layerDefinitions.denscover.breaks) {
+    const breaks = layerDefinitions.denscover.breaks;
+    const colors = layerDefinitions.denscover.colors;
+    
+    html += `<div class="legend-title">Dasymmetric map (people / km² by land cover zone)</div>`;
     html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
     
     for (let i=0; i<breaks.length-1; i++){
@@ -643,10 +722,10 @@ function updateLegend() {
     const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;
     
     // 🌍 STUDENTS: Change these values to match your data ranges
-    const vSmall = 1000;     // Small municipality
-    const vMed = 10000;      // Medium municipality
-    const vMedLarge = 50000; // Medium-large municipality
-    const vLarge = 100000;   // Large municipality
+    const vSmall = 1000;
+    const vMed = 10000;
+    const vMedLarge = 50000;
+    const vLarge = 100000;
     
     const r1 = Math.max(2, Math.pow(vSmall / maxVal, 0.57) * maxR);
     const r2 = Math.max(2, Math.pow(vMed / maxVal, 0.57) * maxR);
@@ -657,7 +736,7 @@ function updateLegend() {
     const cx = 110;
     const baseY = svgHeight - 10;
 
-    html += `<div class="legend-title">Municipal population (proportional circles)</div>`;
+    html += `<div class="legend-title">Population (indicative values)</div>`;
     html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
     
     html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
@@ -674,7 +753,7 @@ function updateLegend() {
   }
 
   if (enabledLayers.contours) {
-    html += `<div class="legend-title">Population potential contours</div>`;
+    html += `<div class="legend-title">Population dynamic (2M & 4M)</div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="1.2"/></svg><div>Secondary (Id = 2)</div></div>`;
     // 🗺️ STUDENTS: Change stroke="#8B0000" to modify contour line color in legend
@@ -682,14 +761,14 @@ function updateLegend() {
   }
 
   if (enabledLayers.dots) {
-    html += `<div class="legend-title">Dot density</div>`;
+    html += `<div class="legend-title">Population density</div>`;
     html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
     // 🗺️ STUDENTS: Change fill="#000" for dot color and "500 people" to match your data
     html += '<hr>';
   }
 
   if (enabledLayers.boundaries) {
-    html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg><div>Municipal boundaries</div></div>`;
+    html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg> <div>Municipal boundaries</div></div>`;
     // 🗺️ STUDENTS: Change stroke="#bbbbbb" for boundary line color in legend
   }
 
@@ -709,7 +788,6 @@ function showHideControls() {
     controls.style.display = checkbox.checked ? 'block' : 'none';
   });
 }
-// This part contains all the event listeners for UI controls
 
 document.getElementById('popdensToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadPopDensLayer(); } else { removeLayer('popdens'); }
@@ -720,7 +798,6 @@ document.getElementById('classificationMethod').addEventListener('change', () =>
   const numClassesLabel = document.getElementById('numClassesLabel');
   const numClassesSelect = document.getElementById('numClasses');
   
-  // Disable number of classes selector when 'custom' is selected
   if (method === 'custom') {
     numClassesSelect.disabled = true;
     numClassesLabel.style.opacity = '0.5';
@@ -740,6 +817,37 @@ document.getElementById('popdensOpacity').addEventListener('input', (e) => {
   document.getElementById('popdensOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.popdens.layerId)) {
     map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-opacity', parseInt(e.target.value,10)/100);
+  }
+});
+
+document.getElementById('denscoverToggle').addEventListener('change', (e) => {
+  if (e.target.checked) { loadDensCoverLayer(); } else { removeLayer('denscover'); }
+});
+
+document.getElementById('denscoverClassificationMethod').addEventListener('change', () => {
+  const method = document.getElementById('denscoverClassificationMethod').value;
+  const numClassesLabel = document.getElementById('denscoverNumClassesLabel');
+  const numClassesSelect = document.getElementById('denscoverNumClasses');
+  
+  if (method === 'custom') {
+    numClassesSelect.disabled = true;
+    numClassesLabel.style.opacity = '0.5';
+  } else {
+    numClassesSelect.disabled = false;
+    numClassesLabel.style.opacity = '1';
+  }
+  
+  if (enabledLayers.denscover) applyDensCoverClassification();
+});
+
+document.getElementById('denscoverNumClasses').addEventListener('change', () => {
+  if (enabledLayers.denscover) applyDensCoverClassification();
+});
+
+document.getElementById('denscoverOpacity').addEventListener('input', (e) => {
+  document.getElementById('denscoverOpacityLabel').textContent = e.target.value + '%';
+  if (map.getLayer(layerDefinitions.denscover.layerId)) {
+    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-opacity', parseInt(e.target.value,10)/100);
   }
 });
 
@@ -809,6 +917,8 @@ document.getElementById('basemapSelect').addEventListener('change', (e) => {
       if (enabledSnapshot[key]) {
         if (key === 'popdens') {
           if (popdensData) { applyPopDensClassification(); } else { loadPopDensLayer(); }
+        } else if (key === 'denscover') {
+          if (denscoverData) { applyDensCoverClassification(); } else { loadDensCoverLayer(); }
         } else if (key === 'poipop') { loadPoipopLayer();
         } else if (key === 'contours') { loadContoursLayer();
         } else if (key === 'dots') { loadDotsLayer();
@@ -820,14 +930,14 @@ document.getElementById('basemapSelect').addEventListener('change', (e) => {
 
 showHideControls();
 
-const uiInputs = ['classificationMethod','numClasses','popdensOpacity','maxRadius','poipopOpacity','contoursOpacity','dotSize','dotsOpacity','boundariesOpacity'];
+const uiInputs = ['classificationMethod','numClasses','popdensOpacity','denscoverClassificationMethod','denscoverNumClasses','denscoverOpacity','maxRadius','poipopOpacity','contoursOpacity','dotSize','dotsOpacity','boundariesOpacity'];
 uiInputs.forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', () => { updateLegend(); });
 });
 
-['popdensToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
+['popdensToggle','denscoverToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     showHideControls();
     updateLegend();
@@ -866,6 +976,7 @@ CUSTOM CLASSIFICATION:
 - Edit the customColors array to match (6 colors for 5 breaks)
 - The number of classes selector will be disabled when custom is active
 */
+
 
 
 
