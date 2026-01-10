@@ -4,6 +4,14 @@
 <meta charset="utf-8" />
 <title>Thessaly Cartography – Interactive Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+<!-- ============================================================
+     EXTERNAL LIBRARIES - MAPLIBRE GL
+     ============================================================
+     MapLibre GL is an open-source library for displaying interactive maps
+     We need both the CSS (for styling) and JavaScript (for functionality)
+     ============================================================ -->
+
 <!--
 MapLibre GL CSS
 - Provides the visual styling for the map
@@ -29,6 +37,9 @@ MapLibre GL JavaScript
      - Control panels (left side)
      - Legend (top right) 
      - Buttons, sliders, and other UI elements
+     
+     Students: You generally don't need to modify CSS unless you want
+     to change the appearance of the interface itself
      ============================================================ -->
 <style>
   body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
@@ -82,7 +93,7 @@ MapLibre GL JavaScript
     min-height: 100px;
   }
   
-  /* 🌍 STUDENTS - MODIFY HEADER STYLES */
+  /* 🌍 STUDENTS - MODIFY HEADER STYLES: Change title/subtitle/author font sizes and colors here */
   .legend-header {
     margin-bottom: 16px;
     padding-bottom: 12px;
@@ -121,9 +132,23 @@ MapLibre GL JavaScript
   .control-value { font-weight:700; margin-left:6px; color:#333; }
   hr { border: none; border-top: 1px solid #eee; margin:8px 0; }
 </style>
+<!-- ============================================================
+     END OF CSS STYLING SECTION
+     ============================================================ -->
 </head>
 <body>
 
+<!-- ============================================================
+     HTML STRUCTURE SECTION - USER INTERFACE ELEMENTS
+     ============================================================
+     This section defines the visual interface that users interact with:
+     - Basemap selector (Light/Dark)
+     - Layer checkboxes and controls (left panel)
+     - Legend (right panel, dynamically updated by JavaScript)
+     - Map container (fills the entire background)
+     ============================================================ -->
+
+<!-- Basemap selector dropdown (Light or Dark background map) -->
 <div id="styleSelector">
   <select id="basemapSelect">
     <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
@@ -131,9 +156,11 @@ MapLibre GL JavaScript
   </select>
 </div>
 
+<!-- Layer controls panel (left side of screen) -->
 <div id="controls">
   <strong>Layers</strong><br><br>
 
+  <!-- Layer 1: Population Density Choropleth Map -->
   <input type="checkbox" id="popdensToggle"> <strong>Population Density (Choropleth Map)</strong><br>
   <div class="layer-controls" id="popdensControls">
     <label>Classification method:
@@ -159,6 +186,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Layer 2: Population Density Dasymmetric Map -->
   <input type="checkbox" id="denscoverToggle"> <strong>Population Density (Dasymmetric Map)</strong><br>
   <div class="layer-controls" id="denscoverControls">
     <label>Classification method:
@@ -184,6 +212,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Layer 3: Population Proportional Symbols -->
   <input type="checkbox" id="poipopToggle"> <strong>Population (Proportional symbols)</strong><br>
   <div class="layer-controls" id="poipopControls">
     <label>Maximum circle radius (px): <span id="maxRadiusLabel" class="control-value">70</span>
@@ -198,6 +227,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Layer 4: Population Dynamic Contours (Isopleths) -->
   <input type="checkbox" id="contoursToggle"> <strong>Population dynamic (Isopleths map)</strong><br>
   <div class="layer-controls" id="contoursControls">
     <label>Opacity (contours): <span id="contoursOpacityLabel" class="control-value">80%</span>
@@ -206,6 +236,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Layer 5: Population Dot Map -->
   <input type="checkbox" id="dotsToggle"> <strong>Population (Dot map)</strong><br>
   <div class="layer-controls" id="dotsControls">
     <label>Dot size (px): <span id="dotSizeLabel" class="control-value">1.9</span>
@@ -217,6 +248,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Layer 6: Municipal Boundaries -->
   <input type="checkbox" id="boundariesToggle"> <strong>Municipal boundaries</strong><br>
   <div class="layer-controls" id="boundariesControls">
     <label>Opacity (boundaries): <span id="boundariesOpacityLabel" class="control-value">100%</span>
@@ -225,6 +257,7 @@ MapLibre GL JavaScript
   </div>
   <hr>
 
+  <!-- Data notes for students -->
   <div style="font-size:12px;color:#555">
     <strong>Data notes (students)</strong><br>
     - All GeoJSONs expected in <code>data/</code> folder<br>
@@ -232,59 +265,103 @@ MapLibre GL JavaScript
   </div>
 </div>
 
+<!-- Legend container (right side, dynamically populated by JavaScript) -->
 <div id="legend"></div>
+
+<!-- Map container (fills entire background) -->
 <div id="map"></div>
 
+<!-- ============================================================
+     END OF HTML STRUCTURE SECTION
+     ============================================================ -->
+
+<!-- ============================================================
+     JAVASCRIPT SECTION - APPLICATION LOGIC
+     ============================================================
+     This is where all the interactive functionality is defined.
+     The code is organized in the following flow:
+     
+     1. MAP INITIALIZATION - Create the map object
+     2. DATA CONFIGURATION - Define where data files are located
+     3. COLOR SCHEMES - Define colors for visualizations
+     4. CLASSIFICATION FUNCTIONS - Calculate class breaks
+     5. LAYER LOADING FUNCTIONS - Load and display each layer
+     6. LEGEND FUNCTION - Generate legend dynamically
+     7. EVENT LISTENERS - Respond to user interactions
+     
+     Students: Focus on sections marked with 🌍 (mandatory changes)
+     and 🗺️ (optional styling changes)
+     ============================================================ -->
 <script>
+
+// ============================================================
+// 1. MAP INITIALIZATION
+// ============================================================
+// This creates the interactive map object that will display everything
 
 /* 🌍 STUDENTS - MODIFY MAP CENTER AND ZOOM */
 const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  center: [22.4, 39.6],  // 🌍 STUDENTS: Change [longitude, latitude] for your area
-  zoom: 8                // 🌍 STUDENTS: Adjust zoom level (0=world, 20=street)
+  container: 'map',           // Links to the <div id="map"> element in HTML
+  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',  // Initial basemap style
+  center: [22.4, 39.6],       // 🌍 STUDENTS: [longitude, latitude] for your study area
+  zoom: 8                     // 🌍 STUDENTS: Zoom level (0=world, 20=street level)
 });
+
+// ============================================================
+// 2. DATA CONFIGURATION
+// ============================================================
+// This object defines where each GeoJSON file is located and which
+// field contains the data to visualize
 
 /* 🌍 STUDENTS - MODIFY DATA FILE PATHS AND FIELD NAMES */
 const layerDefinitions = {
+  // Choropleth map layer (population density by municipality)
   popdens: {
-    sourceId: 'popdens-src',
-    layerId: 'popdens-layer',
-    url: 'data/dimoi_popdens_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'POPDENS'                     // 🌍 STUDENTS: Change field name to match your data
+    sourceId: 'popdens-src',                       // Internal ID for the data source
+    layerId: 'popdens-layer',                      // Internal ID for the map layer
+    url: 'data/dimoi_popdens_WGS.geojson',        // 🌍 STUDENTS: Path to your file
+    dataField: 'POPDENS'                           // 🌍 STUDENTS: Column name in your GeoJSON
   },
+  // Dasymmetric map layer (population density by land cover zone)
   denscover: {
     sourceId: 'denscover-src',
     layerId: 'denscover-layer',
-    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Change field name to match your data
+    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Path to your file
+    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Column name in your GeoJSON
   },
+  // Proportional symbols layer (circles sized by population)
   poipop: {
     sourceId: 'poipop-src',
     layerId: 'poipop-layer',
-    url: 'data/dimoi_poi_pop_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'POPMUN',                     // 🌍 STUDENTS: Change field name to match your data
-    maxValueApprox: 100000                   // 🌍 STUDENTS: Change to your max population value
+    url: 'data/dimoi_poi_pop_WGS.geojson',        // 🌍 STUDENTS: Path to your file
+    dataField: 'POPMUN',                           // 🌍 STUDENTS: Column name in your GeoJSON
+    maxValueApprox: 100000                         // 🌍 STUDENTS: Approximate maximum value (for scaling circles)
   },
+  // Contours/isopleths layer (population potential lines)
   contours: {
     sourceId: 'contours-src',
     layerId: 'contours-layer',
-    url: 'data/pop_contours_200k_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/pop_contours_200k_WGS.geojson'     // 🌍 STUDENTS: Path to your file
   },
+  // Dot density layer (each dot represents X people)
   dots: {
     sourceId: 'dots-src',
     layerId: 'dots-layer',
-    url: 'data/pop_dots_300_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/pop_dots_300_WGS.geojson'          // 🌍 STUDENTS: Path to your file
   },
+  // Boundaries layer (municipal borders)
   boundaries: {
     sourceId: 'boundaries-src',
     layerId: 'boundaries-layer',
-    url: 'data/dimoi_oria_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/dimoi_oria_WGS.geojson'            // 🌍 STUDENTS: Path to your file
   }
 };
 
-let popdensData = null;
-let denscoverData = null;
+// Variables to cache loaded data (so we don't reload it every time)
+let popdensData = null;      // Stores choropleth data once loaded
+let denscoverData = null;    // Stores dasymmetric data once loaded
+
+// Tracks which layers are currently visible on the map
 const enabledLayers = { 
   popdens: false,
   denscover: false,
@@ -294,32 +371,59 @@ const enabledLayers = {
   boundaries: false
 };
 
-/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS) */
+// ============================================================
+// 3. COLOR SCHEMES
+// ============================================================
+// These arrays define the colors used for each classification method
+// The number of colors must match the number of classes + 1
+
+/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS layer) */
+// 🗺️ Change these hex colors to customize your choropleth appearance
 const colorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],
+  3: ['#ffcccc', '#ff6666', '#990000'],           // 3 classes = 4 colors (lightest to darkest)
   4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],
+  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],  // Default
   6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
   7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
 };
 
-/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER) */
+/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
+// 🗺️ Change these hex colors (blue scheme used here to differentiate from choropleth)
 const denscoverColorSchemes = {
   3: ['#d0e5f5', '#4a90c4', '#0d4a70'],
   4: ['#d0e5f5', '#7db3d8', '#2e6fa8', '#0d4a70'],
-  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],
+  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],  // Default
   6: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#4a90c4', '#2e6fa8', '#0d4a70'],
   7: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#5da3ce', '#4a90c4', '#2e6fa8', '#0d4a70']
 };
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR POPDENS */
-const customBreaks = [30, 75, 150, 300, 600];
-const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];
+// Custom breaks define the upper boundary of each class
+// Example: [30, 75, 150, 300, 600] creates these classes:
+//   Class 1: < 30
+//   Class 2: 30 - 75
+//   Class 3: 75 - 150
+//   Class 4: 150 - 300
+//   Class 5: 300 - 600
+//   Class 6: > 600
+const customBreaks = [30, 75, 150, 300, 600];  // 🌍 5 breaks = 6 classes
+const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];  // 🗺️ 6 colors
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
-const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
-const denscoverCustomColors = ['#f0f9ff', '#c6dbef', '#6baed6', '#2171b5', '#08519c', '#08306b'];
+const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];  // 🌍 Example breaks for dasymmetric
+const denscoverCustomColors = ['#f0f9ff', '#c6dbef', '#6baed6', '#2171b5', '#08519c', '#08306b'];  // 🗺️ 6 colors
 
+// ============================================================
+// 4. CLASSIFICATION FUNCTIONS
+// ============================================================
+// These functions calculate class breaks based on the data values
+// Three methods are available: Equal Interval, Quantiles, and Natural Breaks (Jenks)
+
+/**
+ * Equal Interval Classification
+ * Divides the range of values into equal-sized intervals
+ * Example: If min=0 and max=100 with 5 classes, breaks at 20, 40, 60, 80
+ */
 function equalIntervalBreaks(sorted, n) {
   const min = sorted[0];
   const max = sorted[sorted.length-1];
@@ -332,6 +436,11 @@ function equalIntervalBreaks(sorted, n) {
   return breaks.map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * Quantile Classification
+ * Each class contains approximately the same number of features
+ * Good for evenly distributed data display
+ */
 function quantileBreaks(sorted, n) {
   const breaks = [];
   for (let i=1; i<n; i++){
@@ -341,11 +450,19 @@ function quantileBreaks(sorted, n) {
   return breaks.map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * Natural Breaks (Jenks) Classification
+ * Minimizes within-class variance and maximizes between-class variance
+ * Creates breaks where there are natural "gaps" in the data
+ * This is the most complex algorithm but often produces the best-looking maps
+ */
 function jenksBreaks(sorted, numClasses) {
   const n = sorted.length;
+  // Create matrices to store variance calculations
   const mat1 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
   const mat2 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
 
+  // Initialize matrices
   for (let i=1; i<=numClasses; i++) {
     mat1[1][i] = 1;
     mat2[1][i] = 0;
@@ -354,6 +471,7 @@ function jenksBreaks(sorted, numClasses) {
     }
   }
 
+  // Fill matrices using dynamic programming
   for (let l=2; l<=n; l++) {
     let s1=0, s2=0, w=0;
     for (let m=1; m<=l; m++) {
@@ -377,6 +495,7 @@ function jenksBreaks(sorted, numClasses) {
     mat2[l][1] = mat2[l-1][1] + (sorted[l-1]-sorted[0])*(sorted[l-1]-sorted[0]);
   }
 
+  // Extract break points from matrices
   const breaks = [];
   let k = n;
   for (let j = numClasses; j >= 2; j--) {
@@ -387,6 +506,10 @@ function jenksBreaks(sorted, numClasses) {
   return breaks.reverse().map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * Main function to calculate breaks based on selected method
+ * This is called whenever the user changes classification settings
+ */
 function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray) {
   const sorted = values.filter(v => v != null && !isNaN(v)).sort((a,b)=>a-b);
   if (sorted.length === 0) return [];
@@ -394,18 +517,26 @@ function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray
   if (method === 'quantile') return quantileBreaks(sorted, numClasses);
   if (method === 'natural') return jenksBreaks(sorted, numClasses);
   if (method === 'custom') return customBreaksArray;
-  return equalIntervalBreaks(sorted, numClasses);
+  return equalIntervalBreaks(sorted, numClasses);  // Fallback to equal interval
 }
 
+/**
+ * Creates a MapLibre expression for color styling
+ * The 'step' expression assigns colors based on data values and break points
+ */
 function createStepExpression(breaks, colors, field) {
-  const expr = ['step', ['get', field], colors[0]];
+  const expr = ['step', ['get', field], colors[0]];  // Start with base color
   for (let i=0; i<breaks.length; i++){
-    expr.push(breaks[i]);
-    expr.push(colors[i+1] || colors[colors.length-1]);
+    expr.push(breaks[i]);                             // Add break value
+    expr.push(colors[i+1] || colors[colors.length-1]); // Add corresponding color
   }
   return expr;
 }
 
+/**
+ * Ensures a data source exists in the map
+ * If it doesn't exist, create it; if it does, update its data
+ */
 function ensureSource(id, urlOrGeojson) {
   if (!map.getSource(id)) {
     map.addSource(id, { type: 'geojson', data: urlOrGeojson });
@@ -416,6 +547,17 @@ function ensureSource(id, urlOrGeojson) {
   }
 }
 
+// ============================================================
+// 5. LAYER LOADING FUNCTIONS
+// ============================================================
+// Each function loads and displays a specific map layer
+// The pattern is: fetch data → calculate styling → add to map
+
+/**
+ * CHOROPLETH MAP (POPDENS) - Classification and Display
+ * This function is called whenever the choropleth settings change
+ * It recalculates breaks and updates the map styling
+ */
 function applyPopDensClassification() {
   if (!popdensData) {
     console.warn('No popdensData cached.');
@@ -428,17 +570,21 @@ function applyPopDensClassification() {
   let colors, breaks;
   
   if (method === 'custom') {
+    // Use student-defined custom breaks
     breaks = customBreaks;
     colors = customColors;
   } else {
+    // Calculate breaks automatically based on data
     colors = colorSchemes[nclasses] || colorSchemes[5];
     const values = popdensData.features.map(f => parseFloat(f.properties[layerDefinitions.popdens.dataField]));
     breaks = calculateBreaks(values, nclasses, method, false, null);
   }
 
+  // Create the color expression for MapLibre
   const expr = createStepExpression(breaks, colors, layerDefinitions.popdens.dataField);
   ensureSource(layerDefinitions.popdens.sourceId, popdensData);
 
+  // Add layer to map or update existing layer
   if (map.getLayer(layerDefinitions.popdens.layerId)) {
     map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-color', expr);
   } else {
@@ -446,63 +592,6 @@ function applyPopDensClassification() {
       id: layerDefinitions.popdens.layerId,
       type: 'fill',
       source: layerDefinitions.popdens.sourceId,
-      paint: {
-        'fill-color': expr,
-        'fill-opacity': parseInt(document.getElementById('popdensOpacity').value,10)/100
-      }
-    });
-  }
-
-  layerDefinitions.popdens.breaks = breaks;
-  layerDefinitions.popdens.colors = colors;
-  enabledLayers.popdens = true;
-  document.getElementById('popdensControls').style.display = 'block';
-  updateLegend();
-}
-
-function loadPopDensLayer() {
-  fetch(layerDefinitions.popdens.url)
-    .then(r => r.json())
-    .then(gj => {
-      popdensData = gj;
-      applyPopDensClassification();
-    })
-    .catch(err => {
-      console.error('Failed to load POPDENS:', err);
-      alert('Error loading POPDENS geojson.');
-    });
-}
-
-function applyDensCoverClassification() {
-  if (!denscoverData) {
-    console.warn('No denscoverData cached.');
-    return;
-  }
-  
-  const method = document.getElementById('denscoverClassificationMethod').value;
-  const nclasses = parseInt(document.getElementById('denscoverNumClasses').value,10);
-  
-  let colors, breaks;
-  
-  if (method === 'custom') {
-    breaks = denscoverCustomBreaks;
-    colors = denscoverCustomColors;
-  } else {
-    colors = denscoverColorSchemes[nclasses] || denscoverColorSchemes[5];
-    const values = denscoverData.features.map(f => parseFloat(f.properties[layerDefinitions.denscover.dataField]));
-    breaks = calculateBreaks(values, nclasses, method, false, null);
-  }
-
-  const expr = createStepExpression(breaks, colors, layerDefinitions.denscover.dataField);
-  ensureSource(layerDefinitions.denscover.sourceId, denscoverData);
-
-  if (map.getLayer(layerDefinitions.denscover.layerId)) {
-    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-color', expr);
-  } else {
-    map.addLayer({
-      id: layerDefinitions.denscover.layerId,
-      type: 'fill',
-      source: layerDefinitions.denscover.sourceId,
       paint: {
         'fill-color': expr,
         'fill-opacity': parseInt(document.getElementById('denscoverOpacity').value,10)/100
@@ -517,6 +606,9 @@ function applyDensCoverClassification() {
   updateLegend();
 }
 
+/**
+ * DASYMMETRIC MAP (DENS_COVER) - Initial Data Loading
+ */
 function loadDensCoverLayer() {
   fetch(layerDefinitions.denscover.url)
     .then(r => r.json())
@@ -526,16 +618,21 @@ function loadDensCoverLayer() {
     })
     .catch(err => {
       console.error('Failed to load DENS_COVER:', err);
-      alert('Error loading DENS_COVER geojson.');
+      alert('Error loading DENS_COVER geojson. Check file path.');
     });
 }
 
+/**
+ * PROPORTIONAL SYMBOLS (POPMUN) - Display circles sized by population
+ * Uses Flannery scaling (power of 0.57) for better visual perception
+ */
 function loadPoipopLayer() {
   const def = layerDefinitions.poipop;
   ensureSource(def.sourceId, def.url);
 
   const maxR = parseInt(document.getElementById('maxRadius').value,10);
   const vL = def.maxValueApprox || 100000;
+  // Flannery formula: radius = (value/maxValue)^0.57 * maxRadius
   const radiusExpr = ['*', ['^', ['/', ['get', def.dataField], vL], 0.57], maxR];
 
   if (!map.getLayer(def.layerId)) {
@@ -561,6 +658,9 @@ function loadPoipopLayer() {
   updateLegend();
 }
 
+/**
+ * Update circle radius when slider changes
+ */
 function updatePoipopRadius() {
   const def = layerDefinitions.poipop;
   if (!map.getLayer(def.layerId)) return;
@@ -573,10 +673,15 @@ function updatePoipopRadius() {
   updateLegend();
 }
 
+/**
+ * CONTOURS/ISOPLETHS - Lines representing population potential
+ * Uses ID field to differentiate primary (thicker) and secondary (thinner) lines
+ */
 function loadContoursLayer() {
   const def = layerDefinitions.contours;
   ensureSource(def.sourceId, def.url);
 
+  // Conditional expression: if ID=1 use width 3, otherwise use 1.2
   const widthExpr = ['case', ['==', ['get', 'ID'], 1], 3, 1.2];
   const color = '#8B0000';  // 🗺️ STUDENTS: Change contour line color
 
@@ -601,6 +706,9 @@ function loadContoursLayer() {
   updateLegend();
 }
 
+/**
+ * DOT DENSITY MAP - Each dot represents a certain number of people
+ */
 function loadDotsLayer() {
   const def = layerDefinitions.dots;
   ensureSource(def.sourceId, def.url);
@@ -629,6 +737,9 @@ function loadDotsLayer() {
   updateLegend();
 }
 
+/**
+ * MUNICIPAL BOUNDARIES - Simple line layer
+ */
 function loadBoundariesLayer() {
   const def = layerDefinitions.boundaries;
   ensureSource(def.sourceId, def.url);
@@ -653,6 +764,10 @@ function loadBoundariesLayer() {
   updateLegend();
 }
 
+/**
+ * Remove a layer from the map
+ * Called when user unchecks a layer
+ */
 function removeLayer(name) {
   const def = layerDefinitions[name];
   if (map.getLayer(def.layerId)) map.removeLayer(def.layerId);
@@ -662,6 +777,11 @@ function removeLayer(name) {
   if (c) c.style.display = 'none';
   updateLegend();
 }
+
+// ============================================================
+// 6. LEGEND GENERATION
+// ============================================================
+// Dynamically creates the legend HTML based on active layers
 
 /* 🌍 STUDENTS - MODIFY LEGEND TITLE AND TEXT */
 function updateLegend() {
@@ -686,6 +806,7 @@ function updateLegend() {
     </div>
   `;
 
+  // Choropleth legend (if active)
   if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
@@ -701,6 +822,7 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Dasymmetric legend (if active)
   if (enabledLayers.denscover && layerDefinitions.denscover.breaks) {
     const breaks = layerDefinitions.denscover.breaks;
     const colors = layerDefinitions.denscover.colors;
@@ -717,16 +839,18 @@ function updateLegend() {
   }
 
   /* 🌍 STUDENTS - MODIFY LEGEND CIRCLE SIZES */
+  // Proportional symbols legend (if active)
   if (enabledLayers.poipop) {
     const maxR = parseInt(document.getElementById('maxRadius').value,10);
     const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;
     
     // 🌍 STUDENTS: Change these values to match your data ranges
-    const vSmall = 1000;
-    const vMed = 10000;
-    const vMedLarge = 50000;
-    const vLarge = 100000;
+    const vSmall = 1000;     // Small population
+    const vMed = 10000;      // Medium population
+    const vMedLarge = 50000; // Medium-large population
+    const vLarge = 100000;   // Large population
     
+    // Calculate circle radii using Flannery scaling
     const r1 = Math.max(2, Math.pow(vSmall / maxVal, 0.57) * maxR);
     const r2 = Math.max(2, Math.pow(vMed / maxVal, 0.57) * maxR);
     const r3 = Math.max(2, Math.pow(vMedLarge / maxVal, 0.57) * maxR);
@@ -739,6 +863,7 @@ function updateLegend() {
     html += `<div class="legend-title">Population (indicative values)</div>`;
     html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
     
+    // Draw circles from bottom to top
     html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r1*2) - 4}" text-anchor="middle" font-size="11">1,000</text>`;
     html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
@@ -752,6 +877,7 @@ function updateLegend() {
     html += `</svg></div><hr>`;
   }
 
+  // Contours legend (if active)
   if (enabledLayers.contours) {
     html += `<div class="legend-title">Population dynamic (2M & 4M)</div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
@@ -760,6 +886,7 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Dot density legend (if active)
   if (enabledLayers.dots) {
     html += `<div class="legend-title">Population density</div>`;
     html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
@@ -767,11 +894,13 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Boundaries legend (if active)
   if (enabledLayers.boundaries) {
     html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg> <div>Municipal boundaries</div></div>`;
     // 🗺️ STUDENTS: Change stroke="#bbbbbb" for boundary line color in legend
   }
 
+  // Display legend if any layer is active
   if (html.length) {
     legend.innerHTML = html;
     legend.style.display = 'block';
@@ -780,6 +909,9 @@ function updateLegend() {
   }
 }
 
+/**
+ * Show/hide layer controls based on checkbox state
+ */
 function showHideControls() {
   Object.keys(enabledLayers).forEach(k => {
     const checkbox = document.getElementById(k + 'Toggle');
@@ -789,6 +921,14 @@ function showHideControls() {
   });
 }
 
+// ============================================================
+// 7. EVENT LISTENERS
+// ============================================================
+// These connect user interface interactions to the functions above
+// Whenever a user clicks, drags a slider, or changes a dropdown,
+// these listeners "hear" the event and call the appropriate function
+
+// --- CHOROPLETH MAP CONTROLS ---
 document.getElementById('popdensToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadPopDensLayer(); } else { removeLayer('popdens'); }
 });
@@ -798,6 +938,7 @@ document.getElementById('classificationMethod').addEventListener('change', () =>
   const numClassesLabel = document.getElementById('numClassesLabel');
   const numClassesSelect = document.getElementById('numClasses');
   
+  // Disable number of classes when custom is selected
   if (method === 'custom') {
     numClassesSelect.disabled = true;
     numClassesLabel.style.opacity = '0.5';
@@ -820,6 +961,7 @@ document.getElementById('popdensOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- DASYMMETRIC MAP CONTROLS ---
 document.getElementById('denscoverToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadDensCoverLayer(); } else { removeLayer('denscover'); }
 });
@@ -851,6 +993,7 @@ document.getElementById('denscoverOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- PROPORTIONAL SYMBOLS CONTROLS ---
 document.getElementById('poipopToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadPoipopLayer(); } else { removeLayer('poipop'); }
 });
@@ -867,6 +1010,7 @@ document.getElementById('poipopOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- CONTOURS CONTROLS ---
 document.getElementById('contoursToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadContoursLayer(); } else { removeLayer('contours'); }
 });
@@ -878,6 +1022,7 @@ document.getElementById('contoursOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- DOT MAP CONTROLS ---
 document.getElementById('dotsToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadDotsLayer(); } else { removeLayer('dots'); }
 });
@@ -896,6 +1041,7 @@ document.getElementById('dotsOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- BOUNDARIES CONTROLS ---
 document.getElementById('boundariesToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadBoundariesLayer(); } else { removeLayer('boundaries'); }
 });
@@ -907,11 +1053,14 @@ document.getElementById('boundariesOpacity').addEventListener('input', (e) => {
   }
 });
 
+// --- BASEMAP SWITCHING ---
+// When changing basemap, we need to reload all active layers
 document.getElementById('basemapSelect').addEventListener('change', (e) => {
   const style = e.target.value;
-  const enabledSnapshot = {...enabledLayers};
+  const enabledSnapshot = {...enabledLayers};  // Remember which layers were active
   map.setStyle(style);
   
+  // Once new style loads, re-add all previously active layers
   map.once('styledata', () => {
     for (const key in enabledSnapshot) {
       if (enabledSnapshot[key]) {
@@ -928,8 +1077,10 @@ document.getElementById('basemapSelect').addEventListener('change', (e) => {
   });
 });
 
+// Initialize controls visibility
 showHideControls();
 
+// Listen for changes to any UI input and update legend
 const uiInputs = ['classificationMethod','numClasses','popdensOpacity','denscoverClassificationMethod','denscoverNumClasses','denscoverOpacity','maxRadius','poipopOpacity','contoursOpacity','dotSize','dotsOpacity','boundariesOpacity'];
 uiInputs.forEach(id => {
   const el = document.getElementById(id);
@@ -937,6 +1088,7 @@ uiInputs.forEach(id => {
   el.addEventListener('input', () => { updateLegend(); });
 });
 
+// Listen for checkbox changes to update controls and legend
 ['popdensToggle','denscoverToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     showHideControls();
@@ -944,42 +1096,139 @@ uiInputs.forEach(id => {
   });
 });
 
-map.on('load', () => {});
+// Map load event (currently empty but available for future use)
+map.on('load', () => {
+  console.log('Map loaded successfully');
+});
 
+// Log initialization info to browser console
 console.log('Thessaly Cartography Viewer - Ready');
 console.log('Data files expected in "data/" folder');
-console.log(layerDefinitions);
-
-</script>
-</body>
-</html>
+console.log('Layer definitions:', layerDefinitions);
 
 // ============================================================
-// END OF JAVASCRIPT - APPLICATION COMPLETE
+// END OF JAVASCRIPT SECTION
 // ============================================================
 
 /* 
-INSTRUCTIONS FOR STUDENTS:
-1. Copy Part 1 (HTML + CSS + initial JS) to a new .html file
-2. Replace "// CONTINUED IN NEXT PART..." with the code from Part 2
-3. Replace "// CONTINUED IN PART 3..." with the code from Part 3
-4. Make sure all your GeoJSON files are in a "data/" folder
-5. Customize the settings marked with 🌍 (mandatory) and 🗺️ (optional)
+╔═══════════════════════════════════════════════════════════╗
+║        INSTRUCTIONS FOR STUDENTS                          ║
+╚═══════════════════════════════════════════════════════════╝
+
+HOW TO USE THIS FILE:
+1. Save this file as "map.html" (or any name ending in .html)
+2. Create a "data/" folder in the same location
+3. Place all your GeoJSON files in the "data/" folder
+4. Open the HTML file in a web browser (Chrome, Firefox, Edge, etc.)
 
 KEY CUSTOMIZATION POINTS:
-🌍 = Mandatory changes (data paths, field names, custom breaks, legend text)
-🗺️ = Optional changes (colors, styles, visual appearance)
+🌍 = Mandatory changes (MUST modify for your project)
+🗺️ = Optional changes (modify to improve appearance)
 
-CUSTOM CLASSIFICATION:
-- To use custom intervals, select "🌍 Custom intervals" in the dropdown
-- Edit the customBreaks array: [30, 75, 150, 300, 600]
-- Edit the customColors array to match (6 colors for 5 breaks)
-- The number of classes selector will be disabled when custom is active
+WHAT YOU NEED TO MODIFY:
+
+🌍 MANDATORY:
+- Map center coordinates [longitude, latitude]
+- Zoom level
+- Data file paths (all 6 GeoJSON files)
+- Field names in your GeoJSON files
+- Maximum population value for circle scaling
+- Custom classification breaks and colors
+- Legend text (title, subtitle, author, data source)
+- Circle sizes in legend to match your data
+
+🗺️ OPTIONAL (for better appearance):
+- Color schemes for choropleth and dasymmetric maps
+- Circle colors for proportional symbols
+- Contour line colors
+- Dot colors
+- Boundary line colors
+- Legend styling (fonts, colors, sizes)
+
+UNDERSTANDING THE CODE FLOW:
+1. User clicks a checkbox → Event listener activated
+2. Event listener calls loading function → Data fetched from file
+3. Loading function calls classification function → Breaks calculated
+4. Classification function creates styling → Colors assigned to values
+5. Styling applied to map → Layer becomes visible
+6. Legend function called → Legend updated with new colors/breaks
+
+TROUBLESHOOTING:
+- If map doesn't load: Check file paths in layerDefinitions
+- If layer doesn't appear: Open browser console (F12) to see errors
+- If colors look wrong: Check color arrays match number of breaks
+- If circles too small/large: Adjust maxValueApprox and legend values
+
+For questions, refer to MapLibre GL documentation:
+https://maplibre.org/maplibre-gl-js/docs/
 */
 
+</script>
+</body>
+</html>: {
+        'fill-color': expr,
+        'fill-opacity': parseInt(document.getElementById('popdensOpacity').value,10)/100
+      }
+    });
+  }
 
+  // Store breaks and colors for legend generation
+  layerDefinitions.popdens.breaks = breaks;
+  layerDefinitions.popdens.colors = colors;
+  enabledLayers.popdens = true;
+  document.getElementById('popdensControls').style.display = 'block';
+  updateLegend();
+}
 
+/**
+ * CHOROPLETH MAP (POPDENS) - Initial Data Loading
+ * Fetches the GeoJSON file from the server
+ */
+function loadPopDensLayer() {
+  fetch(layerDefinitions.popdens.url)
+    .then(r => r.json())
+    .then(gj => {
+      popdensData = gj;
+      applyPopDensClassification();
+    })
+    .catch(err => {
+      console.error('Failed to load POPDENS:', err);
+      alert('Error loading POPDENS geojson. Check file path.');
+    });
+}
 
+/**
+ * DASYMMETRIC MAP (DENS_COVER) - Classification and Display
+ * Same logic as choropleth but for the dasymmetric layer
+ */
+function applyDensCoverClassification() {
+  if (!denscoverData) {
+    console.warn('No denscoverData cached.');
+    return;
+  }
+  
+  const method = document.getElementById('denscoverClassificationMethod').value;
+  const nclasses = parseInt(document.getElementById('denscoverNumClasses').value,10);
+  
+  let colors, breaks;
+  
+  if (method === 'custom') {
+    breaks = denscoverCustomBreaks;
+    colors = denscoverCustomColors;
+  } else {
+    colors = denscoverColorSchemes[nclasses] || denscoverColorSchemes[5];
+    const values = denscoverData.features.map(f => parseFloat(f.properties[layerDefinitions.denscover.dataField]));
+    breaks = calculateBreaks(values, nclasses, method, false, null);
+  }
 
+  const expr = createStepExpression(breaks, colors, layerDefinitions.denscover.dataField);
+  ensureSource(layerDefinitions.denscover.sourceId, denscoverData);
 
-
+  if (map.getLayer(layerDefinitions.denscover.layerId)) {
+    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-color', expr);
+  } else {
+    map.addLayer({
+      id: layerDefinitions.denscover.layerId,
+      type: 'fill',
+      source: layerDefinitions.denscover.sourceId,
+      paint
