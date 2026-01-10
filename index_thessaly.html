@@ -4,9 +4,43 @@
 <meta charset="utf-8" />
 <title>Thessaly Cartography – Interactive Map</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+<!-- ============================================================
+     EXTERNAL LIBRARIES - MAPLIBRE GL
+     ============================================================
+     MapLibre GL is an open-source library for displaying interactive maps
+     We need both the CSS (for styling) and JavaScript (for functionality)
+     ============================================================ -->
+
+<!--
+MapLibre GL CSS
+- Provides the visual styling for the map
+- Styles map controls (zoom buttons, attribution, scale bar)
+- Ensures correct layout and appearance of the map canvas
+-->
 <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+<!--
+MapLibre GL JavaScript
+- Core MapLibre library for web mapping
+- Handles map rendering using WebGL
+- Enables interaction (zoom, pan, rotation)
+- Supports loading layers, GeoJSON data, and user events
+-->
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
+<!-- ============================================================
+     CSS STYLING SECTION
+     ============================================================
+     This <style> section contains all the visual styling rules for:
+     - Map container layout
+     - Control panels (left side)
+     - Legend (top right) 
+     - Buttons, sliders, and other UI elements
+     
+     Students: You generally don't need to modify CSS unless you want
+     to change the appearance of the interface itself
+     ============================================================ -->
 <style>
   body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
   #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -59,7 +93,7 @@
     min-height: 100px;
   }
   
-  /* 🌍 STUDENTS - MODIFY HEADER STYLES */
+  /* 🌍 STUDENTS - MODIFY HEADER STYLES: Change title/subtitle/author font sizes and colors here */
   .legend-header {
     margin-bottom: 16px;
     padding-bottom: 12px;
@@ -98,9 +132,23 @@
   .control-value { font-weight:700; margin-left:6px; color:#333; }
   hr { border: none; border-top: 1px solid #eee; margin:8px 0; }
 </style>
+<!-- ============================================================
+     END OF CSS STYLING SECTION
+     ============================================================ -->
 </head>
 <body>
 
+<!-- ============================================================
+     HTML STRUCTURE SECTION - USER INTERFACE ELEMENTS
+     ============================================================
+     This section defines the visual interface that users interact with:
+     - Basemap selector (Light/Dark)
+     - Layer checkboxes and controls (left panel)
+     - Legend (right panel, dynamically updated by JavaScript)
+     - Map container (fills the entire background)
+     ============================================================ -->
+
+<!-- Basemap selector dropdown (Light or Dark background map) -->
 <div id="styleSelector">
   <select id="basemapSelect">
     <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
@@ -108,9 +156,11 @@
   </select>
 </div>
 
+<!-- Layer controls panel (left side of screen) -->
 <div id="controls">
   <strong>Layers</strong><br><br>
 
+  <!-- Layer 1: Population Density Choropleth Map -->
   <input type="checkbox" id="popdensToggle"> <strong>Population Density (Choropleth Map)</strong><br>
   <div class="layer-controls" id="popdensControls">
     <label>Classification method:
@@ -136,6 +186,7 @@
   </div>
   <hr>
 
+  <!-- Layer 2: Population Density Dasymmetric Map -->
   <input type="checkbox" id="denscoverToggle"> <strong>Population Density (Dasymmetric Map)</strong><br>
   <div class="layer-controls" id="denscoverControls">
     <label>Classification method:
@@ -161,6 +212,7 @@
   </div>
   <hr>
 
+  <!-- Layer 3: Population Proportional Symbols -->
   <input type="checkbox" id="poipopToggle"> <strong>Population (Proportional symbols)</strong><br>
   <div class="layer-controls" id="poipopControls">
     <label>Maximum circle radius (px): <span id="maxRadiusLabel" class="control-value">70</span>
@@ -175,7 +227,8 @@
   </div>
   <hr>
 
-  <input type="checkbox" id="contoursToggle"> <strong>Population dynamic contours (Isopleths map)</strong><br>
+  <!-- Layer 4: Population Dynamic Contours (Isopleths) -->
+  <input type="checkbox" id="contoursToggle"> <strong>Population dynamic (Isopleths map)</strong><br>
   <div class="layer-controls" id="contoursControls">
     <label>Opacity (contours): <span id="contoursOpacityLabel" class="control-value">80%</span>
       <input type="range" id="contoursOpacity" min="0" max="100" value="80">
@@ -183,6 +236,7 @@
   </div>
   <hr>
 
+  <!-- Layer 5: Population Dot Map -->
   <input type="checkbox" id="dotsToggle"> <strong>Population (Dot map)</strong><br>
   <div class="layer-controls" id="dotsControls">
     <label>Dot size (px): <span id="dotSizeLabel" class="control-value">1.9</span>
@@ -194,6 +248,7 @@
   </div>
   <hr>
 
+  <!-- Layer 6: Municipal Boundaries -->
   <input type="checkbox" id="boundariesToggle"> <strong>Municipal boundaries</strong><br>
   <div class="layer-controls" id="boundariesControls">
     <label>Opacity (boundaries): <span id="boundariesOpacityLabel" class="control-value">100%</span>
@@ -202,6 +257,7 @@
   </div>
   <hr>
 
+  <!-- Data notes for students -->
   <div style="font-size:12px;color:#555">
     <strong>Data notes (students)</strong><br>
     - All GeoJSONs expected in <code>data/</code> folder<br>
@@ -209,59 +265,103 @@
   </div>
 </div>
 
+<!-- Legend container (right side, dynamically populated by JavaScript) -->
 <div id="legend"></div>
+
+<!-- Map container (fills entire background) -->
 <div id="map"></div>
 
+<!-- ============================================================
+     END OF HTML STRUCTURE SECTION
+     ============================================================ -->
+
+<!-- ============================================================
+     JAVASCRIPT SECTION - APPLICATION LOGIC
+     ============================================================
+     This is where all the interactive functionality is defined.
+     The code is organized in the following flow:
+     
+     1. MAP INITIALIZATION - Create the map object
+     2. DATA CONFIGURATION - Define where data files are located
+     3. COLOR SCHEMES - Define colors for visualizations
+     4. CLASSIFICATION FUNCTIONS - Calculate class breaks
+     5. LAYER LOADING FUNCTIONS - Load and display each layer
+     6. LEGEND FUNCTION - Generate legend dynamically
+     7. EVENT LISTENERS - Respond to user interactions
+     
+     Students: Focus on sections marked with 🌍 (mandatory changes)
+     and 🗺️ (optional styling changes)
+     ============================================================ -->
 <script>
+
+// ============================================================
+// 1. MAP INITIALIZATION
+// ============================================================
+// This creates the interactive map object that will display everything
 
 /* 🌍 STUDENTS - MODIFY MAP CENTER AND ZOOM */
 const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  center: [22.4, 39.6],  // 🌍 STUDENTS: Change [longitude, latitude] for your area
-  zoom: 8                // 🌍 STUDENTS: Adjust zoom level (0=world, 20=street)
+  container: 'map',           // Links to the <div id="map"> element in HTML
+  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',  // Initial basemap style
+  center: [22.4, 39.6],       // 🌍 STUDENTS: [longitude, latitude] for your study area
+  zoom: 8                     // 🌍 STUDENTS: Zoom level (0=world, 20=street level)
 });
+
+// ============================================================
+// 2. DATA CONFIGURATION
+// ============================================================
+// This object defines where each GeoJSON file is located and which
+// field contains the data to visualize
 
 /* 🌍 STUDENTS - MODIFY DATA FILE PATHS AND FIELD NAMES */
 const layerDefinitions = {
+  // Choropleth map layer (population density by municipality)
   popdens: {
-    sourceId: 'popdens-src',
-    layerId: 'popdens-layer',
-    url: 'data/dimoi_popdens_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'POPDENS'                     // 🌍 STUDENTS: Change field name to match your data
+    sourceId: 'popdens-src',                       // Internal ID for the data source
+    layerId: 'popdens-layer',                      // Internal ID for the map layer
+    url: 'data/dimoi_popdens_WGS.geojson',        // 🌍 STUDENTS: Path to your file
+    dataField: 'POPDENS'                           // 🌍 STUDENTS: Column name in your GeoJSON
   },
+  // Dasymmetric map layer (population density by land cover zone)
   denscover: {
     sourceId: 'denscover-src',
     layerId: 'denscover-layer',
-    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Change field name to match your data
+    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Path to your file
+    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Column name in your GeoJSON
   },
+  // Proportional symbols layer (circles sized by population)
   poipop: {
     sourceId: 'poipop-src',
     layerId: 'poipop-layer',
-    url: 'data/dimoi_poi_pop_WGS.geojson',  // 🌍 STUDENTS: Change path to your file
-    dataField: 'POPMUN',                     // 🌍 STUDENTS: Change field name to match your data
-    maxValueApprox: 100000                   // 🌍 STUDENTS: Change to your max population value
+    url: 'data/dimoi_poi_pop_WGS.geojson',        // 🌍 STUDENTS: Path to your file
+    dataField: 'POPMUN',                           // 🌍 STUDENTS: Column name in your GeoJSON
+    maxValueApprox: 100000                         // 🌍 STUDENTS: Approximate maximum value (for scaling circles)
   },
+  // Contours/isopleths layer (population potential lines)
   contours: {
     sourceId: 'contours-src',
     layerId: 'contours-layer',
-    url: 'data/pop_contours_200k_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/pop_contours_200k_WGS.geojson'     // 🌍 STUDENTS: Path to your file
   },
+  // Dot density layer (each dot represents X people)
   dots: {
     sourceId: 'dots-src',
     layerId: 'dots-layer',
-    url: 'data/pop_dots_300_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/pop_dots_300_WGS.geojson'          // 🌍 STUDENTS: Path to your file
   },
+  // Boundaries layer (municipal borders)
   boundaries: {
     sourceId: 'boundaries-src',
     layerId: 'boundaries-layer',
-    url: 'data/dimoi_oria_WGS.geojson'  // 🌍 STUDENTS: Change path to your file
+    url: 'data/dimoi_oria_WGS.geojson'            // 🌍 STUDENTS: Path to your file
   }
 };
 
-let popdensData = null;
-let denscoverData = null;
+// Variables to cache loaded data (so we don't reload it every time)
+let popdensData = null;      // Stores choropleth data once loaded
+let denscoverData = null;    // Stores dasymmetric data once loaded
+
+// Tracks which layers are currently visible on the map
 const enabledLayers = { 
   popdens: false,
   denscover: false,
@@ -271,20 +371,28 @@ const enabledLayers = {
   boundaries: false
 };
 
-/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS) */
+// ============================================================
+// 3. COLOR SCHEMES
+// ============================================================
+// These arrays define the colors used for each classification method
+// The number of colors must match the number of classes + 1
+
+/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS layer) */
+// 🗺️ Change these hex colors to customize your choropleth appearance
 const colorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],
+  3: ['#ffcccc', '#ff6666', '#990000'],           // 3 classes = 4 colors (lightest to darkest)
   4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],
+  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],  // Default
   6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
   7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
 };
 
-/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER) */
+/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
+// 🗺️ Change these hex colors (blue scheme used here to differentiate from choropleth)
 const denscoverColorSchemes = {
   3: ['#d0e5f5', '#4a90c4', '#0d4a70'],
   4: ['#d0e5f5', '#7db3d8', '#2e6fa8', '#0d4a70'],
-  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],
+  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],  // Default
   6: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#4a90c4', '#2e6fa8', '#0d4a70'],
   7: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#5da3ce', '#4a90c4', '#2e6fa8', '#0d4a70']
 };
@@ -296,6 +404,10 @@ const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#d
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
 const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
 const denscoverCustomColors = ['#f0f9ff', '#c6dbef', '#6baed6', '#2171b5', '#08519c', '#08306b'];
+
+// ============================================================
+// 4. CLASSIFICATION FUNCTIONS
+// ============================================================
 
 function equalIntervalBreaks(sorted, n) {
   const min = sorted[0];
@@ -392,6 +504,10 @@ function ensureSource(id, urlOrGeojson) {
     }
   }
 }
+
+// ============================================================
+// 5. LAYER LOADING FUNCTIONS
+// ============================================================
 
 function applyPopDensClassification() {
   if (!popdensData) {
@@ -521,10 +637,10 @@ function loadPoipopLayer() {
       type: 'circle',
       source: def.sourceId,
       paint: {
-        'circle-color': 'rgba(255,0,0,0.25)',  // 🗺️ STUDENTS: Change circle fill color
+        'circle-color': 'rgba(255,0,0,0.25)',
         'circle-radius': radiusExpr,
         'circle-opacity': parseInt(document.getElementById('poipopOpacity').value,10)/100,
-        'circle-stroke-color': 'red',  // 🗺️ STUDENTS: Change circle outline color
+        'circle-stroke-color': 'red',
         'circle-stroke-width': 0.8
       }
     });
@@ -930,3 +1046,4 @@ console.log(layerDefinitions);
 </script>
 </body>
 </html>
+
