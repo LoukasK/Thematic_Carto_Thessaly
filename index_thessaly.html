@@ -390,11 +390,11 @@ const colorSchemes = {
 /* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
 // 🗺️ Change these hex colors (blue scheme used here to differentiate from choropleth)
 const denscoverColorSchemes = {
-  3: ['#d0e5f5', '#4a90c4', '#0d4a70'],
-  4: ['#d0e5f5', '#7db3d8', '#2e6fa8', '#0d4a70'],
-  5: ['#d0e5f5', '#9cc9e3', '#4a90c4', '#2e6fa8', '#0d4a70'],  // Default
-  6: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#4a90c4', '#2e6fa8', '#0d4a70'],
-  7: ['#d0e5f5', '#9cc9e3', '#7db3d8', '#5da3ce', '#4a90c4', '#2e6fa8', '#0d4a70']
+  3: ['#ffcccc', '#ff6666', '#990000'],
+  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
+  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],  // Default
+  6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
+  7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
 };
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR POPDENS */
@@ -403,7 +403,7 @@ const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#d
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
 const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
-const denscoverCustomColors = ['#f0f9ff', '#c6dbef', '#6baed6', '#2171b5', '#08519c', '#08306b'];
+const denscoverCustomColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000', '#660000'];
 
 // ============================================================
 // 4. CLASSIFICATION FUNCTIONS
@@ -1044,6 +1044,7 @@ console.log(layerDefinitions);
 </script>
 </body>
 </html>
+
 
 
 
