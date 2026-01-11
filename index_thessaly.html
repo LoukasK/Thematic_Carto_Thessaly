@@ -278,16 +278,16 @@ MapLibre GL JavaScript
 <!-- ============================================================
      JAVASCRIPT SECTION - APPLICATION LOGIC
      ============================================================
-     This is where all the interactive functionality is defined.
-     The code is organized in the following flow:
+     Everything between <script> and </script> tags is JavaScript code.
      
-     1. MAP INITIALIZATION - Create the map object
+     This section is organized into the following parts:
+     1. MAP INITIALIZATION - Creates the map object
      2. DATA CONFIGURATION - Define where data files are located
      3. COLOR SCHEMES - Define colors for visualizations
-     4. CLASSIFICATION FUNCTIONS - Calculate class breaks
-     5. LAYER LOADING FUNCTIONS - Load and display each layer
-     6. LEGEND FUNCTION - Generate legend dynamically
-     7. EVENT LISTENERS - Respond to user interactions
+     4. CLASSIFICATION FUNCTIONS - Calculate class breaks for choropleth maps
+     5. LAYER LOADING FUNCTIONS - Load and display each layer type
+     6. LEGEND GENERATION - Creates dynamic legend based on active layers
+     7. EVENT LISTENERS - Responds to user interactions
      
      Students: Focus on sections marked with 🌍 (mandatory changes)
      and 🗺️ (optional styling changes)
@@ -388,7 +388,7 @@ const colorSchemes = {
 };
 
 /* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
-// 🗺️ Change these hex colors (blue scheme used here to differentiate from choropleth)
+// 🗺️ Change these hex colors (red scheme to match choropleth)
 const denscoverColorSchemes = {
   3: ['#ffcccc', '#ff6666', '#990000'],
   4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
@@ -408,7 +408,24 @@ const denscoverCustomColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990
 // ============================================================
 // 4. CLASSIFICATION FUNCTIONS
 // ============================================================
+// These functions calculate class breaks for choropleth maps
 
+/**
+ * equalIntervalBreaks()
+ * Divides the data range into equal-sized intervals
+ * 
+ * 📚 BACKGROUND:
+ * Equal interval classification divides the range of values into equal-sized bins.
+ * For example, if values range from 0-100 and you want 5 classes, each class
+ * will span 20 units (0-20, 20-40, 40-60, 60-80, 80-100).
+ * 
+ * PROS: Easy to understand, consistent intervals
+ * CONS: May result in classes with very few or no features
+ * 
+ * @param {Array} sorted - Array of sorted numeric values
+ * @param {number} n - Number of classes to create
+ * @returns {Array} Array of break points
+ */
 function equalIntervalBreaks(sorted, n) {
   const min = sorted[0];
   const max = sorted[sorted.length-1];
@@ -421,6 +438,22 @@ function equalIntervalBreaks(sorted, n) {
   return breaks.map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * quantileBreaks()
+ * Divides features into classes with equal numbers of features
+ * 
+ * 📚 BACKGROUND:
+ * Quantile classification ensures each class contains approximately
+ * the same number of features. If you have 100 municipalities and
+ * want 5 classes, each class will contain about 20 municipalities.
+ * 
+ * PROS: Good for evenly distributed data, each class is well-represented
+ * CONS: Can place very different values in the same class
+ * 
+ * @param {Array} sorted - Array of sorted numeric values
+ * @param {number} n - Number of classes to create
+ * @returns {Array} Array of break points
+ */
 function quantileBreaks(sorted, n) {
   const breaks = [];
   for (let i=1; i<n; i++){
@@ -430,6 +463,22 @@ function quantileBreaks(sorted, n) {
   return breaks.map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * jenksBreaks()
+ * Natural breaks (Jenks) - minimizes within-class variance
+ * 
+ * 📚 BACKGROUND:
+ * Jenks natural breaks algorithm identifies "natural" groupings in data
+ * by minimizing variance within classes and maximizing variance between classes.
+ * This often produces the most visually meaningful classification.
+ * 
+ * PROS: Identifies natural clusters in data, statistically optimal
+ * CONS: More computationally intensive, not intuitive to explain
+ * 
+ * @param {Array} sorted - Array of sorted numeric values
+ * @param {number} numClasses - Number of classes to create
+ * @returns {Array} Array of break points
+ */
 function jenksBreaks(sorted, numClasses) {
   const n = sorted.length;
   const mat1 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
@@ -476,6 +525,17 @@ function jenksBreaks(sorted, numClasses) {
   return breaks.reverse().map(b => Number(b.toFixed(2)));
 }
 
+/**
+ * calculateBreaks()
+ * Main function that calls the appropriate classification method
+ * 
+ * @param {Array} values - Array of values to classify
+ * @param {number} numClasses - Number of classes
+ * @param {string} method - Classification method ('equal', 'quantile', 'natural', 'custom')
+ * @param {boolean} isCustom - Whether using custom breaks
+ * @param {Array} customBreaksArray - Array of custom break values
+ * @returns {Array} Array of break points
+ */
 function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray) {
   const sorted = values.filter(v => v != null && !isNaN(v)).sort((a,b)=>a-b);
   if (sorted.length === 0) return [];
@@ -486,6 +546,20 @@ function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray
   return equalIntervalBreaks(sorted, numClasses);
 }
 
+/**
+ * createStepExpression()
+ * Creates a MapLibre expression for coloring features based on class breaks
+ * 
+ * 📚 BACKGROUND:
+ * MapLibre uses expressions (array syntax) to define dynamic styling.
+ * A 'step' expression acts like a lookup table: "if value < break1, use color1;
+ * if value < break2, use color2; etc."
+ * 
+ * @param {Array} breaks - Array of break values
+ * @param {Array} colors - Array of colors (length = breaks.length + 1)
+ * @param {string} field - Field name to read values from
+ * @returns {Array} MapLibre step expression
+ */
 function createStepExpression(breaks, colors, field) {
   const expr = ['step', ['get', field], colors[0]];
   for (let i=0; i<breaks.length; i++){
@@ -495,6 +569,13 @@ function createStepExpression(breaks, colors, field) {
   return expr;
 }
 
+/**
+ * ensureSource()
+ * Adds or updates a GeoJSON data source on the map
+ * 
+ * @param {string} id - Source ID
+ * @param {string|object} urlOrGeojson - URL to fetch or GeoJSON object
+ */
 function ensureSource(id, urlOrGeojson) {
   if (!map.getSource(id)) {
     map.addSource(id, { type: 'geojson', data: urlOrGeojson });
@@ -508,7 +589,19 @@ function ensureSource(id, urlOrGeojson) {
 // ============================================================
 // 5. LAYER LOADING FUNCTIONS
 // ============================================================
+// These functions load and display each visualization layer
 
+/**
+ * applyPopDensClassification()
+ * Applies the selected classification method to the choropleth layer
+ * 
+ * Process:
+ * 1. Read user's selected classification method and number of classes
+ * 2. Calculate appropriate breaks using the selected method
+ * 3. Create color expression for MapLibre
+ * 4. Add or update the layer on the map
+ * 5. Update the legend to show the new classes
+ */
 function applyPopDensClassification() {
   if (!popdensData) {
     console.warn('No popdensData cached.');
@@ -553,6 +646,10 @@ function applyPopDensClassification() {
   updateLegend();
 }
 
+/**
+ * loadPopDensLayer()
+ * Fetches the choropleth GeoJSON file and applies classification
+ */
 function loadPopDensLayer() {
   fetch(layerDefinitions.popdens.url)
     .then(r => r.json())
@@ -566,6 +663,12 @@ function loadPopDensLayer() {
     });
 }
 
+/**
+ * applyDensCoverClassification()
+ * Applies classification to the dasymmetric layer
+ * 
+ * Similar to applyPopDensClassification but for the dasymmetric map
+ */
 function applyDensCoverClassification() {
   if (!denscoverData) {
     console.warn('No denscoverData cached.');
@@ -610,6 +713,10 @@ function applyDensCoverClassification() {
   updateLegend();
 }
 
+/**
+ * loadDensCoverLayer()
+ * Fetches the dasymmetric GeoJSON file and applies classification
+ */
 function loadDensCoverLayer() {
   fetch(layerDefinitions.denscover.url)
     .then(r => r.json())
@@ -623,6 +730,14 @@ function loadDensCoverLayer() {
     });
 }
 
+/**
+ * loadPoipopLayer()
+ * Loads the proportional symbols (circles) layer
+ * 
+ * Uses Flannery scaling (exponent 0.57) for perceptually accurate circles.
+ * See Flannery (1971): "The Relative Effectiveness of Some Common 
+ * Graduated Point Symbols in the Presentation of Quantitative Data"
+ */
 function loadPoipopLayer() {
   const def = layerDefinitions.poipop;
   ensureSource(def.sourceId, def.url);
@@ -637,10 +752,10 @@ function loadPoipopLayer() {
       type: 'circle',
       source: def.sourceId,
       paint: {
-        'circle-color': 'rgba(255,0,0,0.25)',
+        'circle-color': 'rgba(255,0,0,0.25)',  // 🗺️ STUDENTS: Change circle fill color
         'circle-radius': radiusExpr,
         'circle-opacity': parseInt(document.getElementById('poipopOpacity').value,10)/100,
-        'circle-stroke-color': 'red',
+        'circle-stroke-color': 'red',          // 🗺️ STUDENTS: Change circle outline color
         'circle-stroke-width': 0.8
       }
     });
@@ -654,6 +769,10 @@ function loadPoipopLayer() {
   updateLegend();
 }
 
+/**
+ * updatePoipopRadius()
+ * Updates circle sizes when user adjusts the radius slider
+ */
 function updatePoipopRadius() {
   const def = layerDefinitions.poipop;
   if (!map.getLayer(def.layerId)) return;
@@ -666,6 +785,13 @@ function updatePoipopRadius() {
   updateLegend();
 }
 
+/**
+ * loadContoursLayer()
+ * Loads the population potential contour lines (isopleths)
+ * 
+ * Contours show areas of equal population potential, useful for
+ * identifying population centers and their zones of influence.
+ */
 function loadContoursLayer() {
   const def = layerDefinitions.contours;
   ensureSource(def.sourceId, def.url);
@@ -694,6 +820,15 @@ function loadContoursLayer() {
   updateLegend();
 }
 
+/**
+ * loadDotsLayer()
+ * Loads the dot density map layer
+ * 
+ * 📚 BACKGROUND:
+ * Dot density maps use one dot to represent a fixed number of people
+ * (e.g., 1 dot = 500 people). The visual density of dots shows
+ * population concentration patterns.
+ */
 function loadDotsLayer() {
   const def = layerDefinitions.dots;
   ensureSource(def.sourceId, def.url);
@@ -722,6 +857,13 @@ function loadDotsLayer() {
   updateLegend();
 }
 
+/**
+ * loadBoundariesLayer()
+ * Loads the municipal boundary lines
+ * 
+ * Boundaries provide geographic context by showing the official
+ * administrative divisions.
+ */
 function loadBoundariesLayer() {
   const def = layerDefinitions.boundaries;
   ensureSource(def.sourceId, def.url);
@@ -746,6 +888,12 @@ function loadBoundariesLayer() {
   updateLegend();
 }
 
+/**
+ * removeLayer()
+ * Removes a layer from the map when user unchecks it
+ * 
+ * @param {string} name - Name of the layer to remove
+ */
 function removeLayer(name) {
   const def = layerDefinitions[name];
   if (map.getLayer(def.layerId)) map.removeLayer(def.layerId);
@@ -756,12 +904,17 @@ function removeLayer(name) {
   updateLegend();
 }
 
+// ============================================================
+// 6. LEGEND GENERATION
+// ============================================================
+// Dynamically creates legend based on which layers are active
+
 /* 🌍 STUDENTS - MODIFY LEGEND TITLE AND TEXT */
 function updateLegend() {
   const legend = document.getElementById('legend');
   let html = '';
 
-  /* 🌍 STUDENTS: Change the text below or add new text to customize your map title and credits */
+  /* 🌍 STUDENTS: Change the text below to customize your map title and credits */
   html += `
     <div class="legend-header">
       <div class="legend-map-title">THESSALY POPULATION</div>
@@ -777,6 +930,7 @@ function updateLegend() {
     </div>
   `;
 
+  // Choropleth map legend
   if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
@@ -792,6 +946,7 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Dasymmetric map legend
   if (enabledLayers.denscover && layerDefinitions.denscover.breaks) {
     const breaks = layerDefinitions.denscover.breaks;
     const colors = layerDefinitions.denscover.colors;
@@ -808,6 +963,7 @@ function updateLegend() {
   }
 
   /* 🌍 STUDENTS - MODIFY LEGEND CIRCLE SIZES */
+  // Proportional symbols legend
   if (enabledLayers.poipop) {
     const maxR = parseInt(document.getElementById('maxRadius').value,10);
     const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;
@@ -843,6 +999,7 @@ function updateLegend() {
     html += `</svg></div><hr>`;
   }
 
+  // Contours legend
   if (enabledLayers.contours) {
     html += `<div class="legend-title">Population dynamic (2M & 4M)</div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
@@ -851,6 +1008,7 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Dot map legend
   if (enabledLayers.dots) {
     html += `<div class="legend-title">Population density</div>`;
     html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
@@ -858,11 +1016,13 @@ function updateLegend() {
     html += '<hr>';
   }
 
+  // Boundaries legend
   if (enabledLayers.boundaries) {
     html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg> <div> Municipal boundaries</div></div>`;
     // 🗺️ STUDENTS: Change stroke="#bbbbbb" for boundary line color in legend
   }
 
+  // Show or hide legend based on whether any layers are active
   if (html.length) {
     legend.innerHTML = html;
     legend.style.display = 'block';
@@ -871,6 +1031,15 @@ function updateLegend() {
   }
 }
 
+// ============================================================
+// 7. EVENT LISTENERS
+// ============================================================
+// These functions respond to user interactions with the interface
+
+/**
+ * showHideControls()
+ * Shows/hides layer control panels based on checkbox state
+ */
 function showHideControls() {
   Object.keys(enabledLayers).forEach(k => {
     const checkbox = document.getElementById(k + 'Toggle');
@@ -880,15 +1049,18 @@ function showHideControls() {
   });
 }
 
+// Choropleth layer toggle
 document.getElementById('popdensToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadPopDensLayer(); } else { removeLayer('popdens'); }
 });
 
+// Choropleth classification method selector
 document.getElementById('classificationMethod').addEventListener('change', () => {
   const method = document.getElementById('classificationMethod').value;
   const numClassesLabel = document.getElementById('numClassesLabel');
   const numClassesSelect = document.getElementById('numClasses');
   
+  // Disable number of classes selector when using custom breaks
   if (method === 'custom') {
     numClassesSelect.disabled = true;
     numClassesLabel.style.opacity = '0.5';
@@ -900,10 +1072,12 @@ document.getElementById('classificationMethod').addEventListener('change', () =>
   if (enabledLayers.popdens) applyPopDensClassification();
 });
 
+// Choropleth number of classes selector
 document.getElementById('numClasses').addEventListener('change', () => {
   if (enabledLayers.popdens) applyPopDensClassification();
 });
 
+// Choropleth opacity slider
 document.getElementById('popdensOpacity').addEventListener('input', (e) => {
   document.getElementById('popdensOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.popdens.layerId)) {
@@ -911,10 +1085,12 @@ document.getElementById('popdensOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Dasymmetric layer toggle
 document.getElementById('denscoverToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadDensCoverLayer(); } else { removeLayer('denscover'); }
 });
 
+// Dasymmetric classification method selector
 document.getElementById('denscoverClassificationMethod').addEventListener('change', () => {
   const method = document.getElementById('denscoverClassificationMethod').value;
   const numClassesLabel = document.getElementById('denscoverNumClassesLabel');
@@ -931,10 +1107,12 @@ document.getElementById('denscoverClassificationMethod').addEventListener('chang
   if (enabledLayers.denscover) applyDensCoverClassification();
 });
 
+// Dasymmetric number of classes selector
 document.getElementById('denscoverNumClasses').addEventListener('change', () => {
   if (enabledLayers.denscover) applyDensCoverClassification();
 });
 
+// Dasymmetric opacity slider
 document.getElementById('denscoverOpacity').addEventListener('input', (e) => {
   document.getElementById('denscoverOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.denscover.layerId)) {
@@ -942,15 +1120,18 @@ document.getElementById('denscoverOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Proportional symbols layer toggle
 document.getElementById('poipopToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadPoipopLayer(); } else { removeLayer('poipop'); }
 });
 
+// Proportional symbols radius slider
 document.getElementById('maxRadius').addEventListener('input', (e) => {
   document.getElementById('maxRadiusLabel').textContent = e.target.value;
   updatePoipopRadius();
 });
 
+// Proportional symbols opacity slider
 document.getElementById('poipopOpacity').addEventListener('input', (e) => {
   document.getElementById('poipopOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.poipop.layerId)) {
@@ -958,10 +1139,12 @@ document.getElementById('poipopOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Contours layer toggle
 document.getElementById('contoursToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadContoursLayer(); } else { removeLayer('contours'); }
 });
 
+// Contours opacity slider
 document.getElementById('contoursOpacity').addEventListener('input', (e) => {
   document.getElementById('contoursOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.contours.layerId)) {
@@ -969,10 +1152,12 @@ document.getElementById('contoursOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Dot map layer toggle
 document.getElementById('dotsToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadDotsLayer(); } else { removeLayer('dots'); }
 });
 
+// Dot map size slider
 document.getElementById('dotSize').addEventListener('input', (e) => {
   document.getElementById('dotSizeLabel').textContent = e.target.value;
   if (map.getLayer(layerDefinitions.dots.layerId)) {
@@ -980,6 +1165,7 @@ document.getElementById('dotSize').addEventListener('input', (e) => {
   }
 });
 
+// Dot map opacity slider
 document.getElementById('dotsOpacity').addEventListener('input', (e) => {
   document.getElementById('dotsOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.dots.layerId)) {
@@ -987,10 +1173,12 @@ document.getElementById('dotsOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Boundaries layer toggle
 document.getElementById('boundariesToggle').addEventListener('change', (e) => {
   if (e.target.checked) { loadBoundariesLayer(); } else { removeLayer('boundaries'); }
 });
 
+// Boundaries opacity slider
 document.getElementById('boundariesOpacity').addEventListener('input', (e) => {
   document.getElementById('boundariesOpacityLabel').textContent = e.target.value + '%';
   if (map.getLayer(layerDefinitions.boundaries.layerId)) {
@@ -998,6 +1186,7 @@ document.getElementById('boundariesOpacity').addEventListener('input', (e) => {
   }
 });
 
+// Basemap switcher
 document.getElementById('basemapSelect').addEventListener('change', (e) => {
   const style = e.target.value;
   const enabledSnapshot = {...enabledLayers};
@@ -1019,8 +1208,10 @@ document.getElementById('basemapSelect').addEventListener('change', (e) => {
   });
 });
 
+// Initialize control panel visibility
 showHideControls();
 
+// Update legend when any control changes
 const uiInputs = ['classificationMethod','numClasses','popdensOpacity','denscoverClassificationMethod','denscoverNumClasses','denscoverOpacity','maxRadius','poipopOpacity','contoursOpacity','dotSize','dotsOpacity','boundariesOpacity'];
 uiInputs.forEach(id => {
   const el = document.getElementById(id);
@@ -1028,6 +1219,7 @@ uiInputs.forEach(id => {
   el.addEventListener('input', () => { updateLegend(); });
 });
 
+// Update controls and legend when layer checkboxes change
 ['popdensToggle','denscoverToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     showHideControls();
@@ -1035,17 +1227,193 @@ uiInputs.forEach(id => {
   });
 });
 
+// Map load event (currently empty, but can be used for initialization)
 map.on('load', () => {});
 
+// Log initialization message
 console.log('Thessaly Cartography Viewer - Ready');
 console.log('Data files expected in "data/" folder');
 console.log(layerDefinitions);
 
+// ============================================================
+// END OF JAVASCRIPT CODE
+// ============================================================
 </script>
+
+<!-- ============================================================
+     STUDENT QUICK REFERENCE GUIDE
+     ============================================================
+     
+     📚 WHAT YOU NEED TO MODIFY (🌍 = MANDATORY):
+     
+     1. MAP SETTINGS (Lines ~351-355):
+        🌍 center - [longitude, latitude] for your study area
+        🌍 zoom - Initial zoom level (8-12 typical for regions)
+     
+     2. DATA CONFIGURATION (Lines ~370-410):
+        🌍 All file paths (url) - Point to your GeoJSON files
+        🌍 All dataField values - Match your GeoJSON column names
+        🌍 maxValueApprox for poipop - Approximate max population
+     
+     3. COLOR SCHEMES (Lines ~433-453):
+        🗺️ colorSchemes - Colors for choropleth map
+        🗺️ denscoverColorSchemes - Colors for dasymmetric map
+        🗺️ customBreaks & customColors - Custom classification values
+     
+     4. LEGEND TITLE (Lines ~885-897):
+        🌍 Main title text
+        🌍 Data source information
+        🌍 Your name and institution
+        🌍 Student ID
+     
+     5. VISUALIZATION COLORS (🗺️ = OPTIONAL):
+        🗺️ Proportional symbols color (Line ~747) - 'rgba(255,0,0,0.25)'
+        🗺️ Contour line color (Line ~808) - '#8B0000'
+        🗺️ Dot color (Line ~841) - '#000000'
+        🗺️ Boundary color (Line ~864) - '#bbbbbb'
+     
+     ============================================================
+     
+     🐛 TROUBLESHOOTING:
+     
+     Problem: Map shows but no layers appear
+     Solution: 
+     - Open browser console (F12 → Console tab)
+     - Check for error messages about file loading
+     - Verify all file paths in layerDefinitions are correct
+     - Ensure GeoJSON files exist at those locations
+     
+     Problem: Choropleth/Dasymmetric shows wrong colors
+     Solution:
+     - Check dataField matches your GeoJSON column name exactly (case-sensitive!)
+     - Verify your data contains numeric values, not text
+     - Test file at https://geojson.io/
+     
+     Problem: Proportional symbols are wrong size
+     Solution:
+     - Adjust maxValueApprox to match your actual maximum population
+     - Should be approximate largest value in your dataset
+     - Too small = all circles appear large
+     - Too large = all circles appear tiny
+     
+     Problem: Classification fails or shows errors
+     Solution:
+     - Ensure data values are numeric
+     - Check for null or undefined values in your data
+     - Verify classification method is appropriate for your data range
+     
+     Problem: After changing basemap, layers disappear
+     Solution:
+     - This is normal - code automatically re-adds them
+     - If they don't reappear, check console for errors
+     - Verify all file paths are still accessible
+     
+     ============================================================
+     
+     📖 UNDERSTANDING THE APPLICATION:
+     
+     Layer Types Explained:
+     
+     1. **Choropleth Map** (Population Density)
+        - Shows density by administrative area
+        - Uses classification (equal interval, quantile, Jenks, custom)
+        - Best for: Comparing municipalities
+     
+     2. **Dasymmetric Map** (Population by Land Cover)
+        - Refines density using land cover data
+        - More accurate than choropleth
+        - Best for: Understanding population distribution patterns
+     
+     3. **Proportional Symbols** (Circles)
+        - Circle size = total population
+        - Uses Flannery scaling (exponent 0.57)
+        - Best for: Showing absolute magnitudes
+     
+     4. **Isopleths** (Contours)
+        - Lines of equal population potential
+        - Shows zones of influence
+        - Best for: Identifying population centers
+     
+     5. **Dot Density Map**
+        - Each dot = X people (e.g., 500)
+        - Visual pattern shows concentration
+        - Best for: General distribution patterns
+     
+     6. **Boundaries**
+        - Administrative borders
+        - Provides geographic context
+        - Best for: Reference and orientation
+     
+     Classification Methods:
+     
+     - **Equal Interval**: Divides range into equal steps
+       - Use when: Distribution is roughly uniform
+       - Example: 0-20, 20-40, 40-60, 60-80, 80-100
+     
+     - **Quantile**: Equal number of features per class
+       - Use when: Want to compare relative positions
+       - Example: Each class contains 20% of municipalities
+     
+     - **Natural Breaks (Jenks)**: Maximizes between-class differences
+       - Use when: Data has natural groupings
+       - Example: Automatically finds "gaps" in data
+     
+     - **Custom**: You define the breaks
+       - Use when: You have domain knowledge
+       - Example: Break at important thresholds
+     
+     ============================================================
+     
+     🔗 HELPFUL RESOURCES:
+     
+     - MapLibre GL Documentation: https://maplibre.org/maplibre-gl-js/docs/
+     - GeoJSON Specification: https://geojson.org/
+     - GeoJSON Validator: https://geojson.io/
+     - Finding Coordinates: https://www.google.com/maps (right-click any location)
+     - Color Picker: https://htmlcolorcodes.com/
+     - ColorBrewer (cartographic colors): https://colorbrewer2.org/
+     - Flannery Scaling Paper: https://doi.org/10.1080/00087041.1971.10471835
+     
+     ============================================================
+     
+     💡 TIPS FOR SUCCESS:
+     
+     1. Always work with a copy of your original files
+     2. Test all GeoJSON files in https://geojson.io/ before using
+     3. Use meaningful, consistent column names in your data
+     4. Start with one layer, get it working, then add others
+     5. Use browser console (F12) to debug issues
+     6. Keep GeoJSON files under 5MB for good performance
+     7. Use appropriate classification methods for your data
+     8. Test with both Light and Dark basemaps
+     9. Consider color blindness when choosing colors
+     10. Document your data sources and methods
+     
+     ============================================================
+     
+     🎨 CUSTOMIZATION IDEAS:
+     
+     Color Schemes:
+     - Sequential: Light → Dark (one hue, increasing intensity)
+     - Diverging: Light → Dark → Light (two hues, middle = neutral)
+     - Qualitative: Distinct colors (for categories, not quantities)
+     
+     Best Practices:
+     - Use ColorBrewer for cartographically sound colors
+     - Ensure sufficient contrast with basemap
+     - Avoid red/green combinations (colorblind unfriendly)
+     - Limit to 5-7 classes for readability
+     - Use darker colors for higher values (intuitive)
+     
+     Advanced Modifications:
+     - Add popup on click showing municipality data
+     - Implement search functionality for specific areas
+     - Add data export functionality
+     - Create print-friendly version
+     - Add time slider for temporal data
+     - Implement comparison view (side-by-side maps)
+     
+     ============================================================
+-->
 </body>
 </html>
-
-
-
-
-
