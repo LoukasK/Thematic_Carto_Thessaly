@@ -1055,6 +1055,11 @@ function updateLegend() {
     // 🗺️ STUDENTS: Change stroke="#bbbbbb" for boundary line color in legend
   }
 
+  // Add resize hint at the bottom of legend
+  if (html.length) {
+    html += `<div style="text-align: right; font-size: 10px; color: #999; margin-top: 10px;">💡 Drag corner to resize</div>`;
+  }
+
   // Show or hide legend based on whether any layers are active
   if (html.length) {
     legend.innerHTML = html;
