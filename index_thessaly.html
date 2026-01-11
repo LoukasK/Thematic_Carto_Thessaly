@@ -1016,16 +1016,16 @@ function updateLegend() {
     html += `<div class="legend-title">Population (indicative values)</div>`;
     html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
     
-    html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r1*2) - 4}" text-anchor="middle" font-size="11">1,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r2*2) - 4}" text-anchor="middle" font-size="11">10,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">50,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r4*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
-    // 🗺️ STUDENTS: Change circle colors by modifying fill="rgba(...)" above
-    // Note: stroke="none" means no outline, circles are transparent matching the map
+    // 🗺️ STUDENTS: Change circle outline color by modifying stroke="red" above
+    // Note: fill="none" means no fill, only red outline is shown
     
     html += `</svg></div><hr>`;
   }
@@ -1334,8 +1334,8 @@ console.log(layerDefinitions);
         🗺️ Dot color (Line ~841) - '#ff0000' (red)
         🗺️ Boundary color (Line ~864) - '#bbbbbb'
         
-        NOTE: Circle colors in legend (Lines ~955-962) will automatically
-        match your proportional symbols color settings (transparent, no stroke)
+        NOTE: Circle colors in legend (Lines ~955-962) show only red outline
+        with no fill (fill="none" stroke="red") for better visibility
      
      ============================================================
      
