@@ -418,7 +418,7 @@ const denscoverColorSchemes = {
 // 2. Modify the colors in customColors array below (must have one more color than breaks)
 // 3. The legend will automatically update with your new breaks and colors
 const customBreaks = [30, 75, 150, 300, 600];
-const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];
+const customColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000', '#660000'];
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
 // These break values define the class boundaries for custom classification in dasymmetric map
@@ -869,7 +869,7 @@ function loadDotsLayer() {
       type: 'circle',
       source: def.sourceId,
       paint: {
-        'circle-color': '#000000',  // 🗺️ STUDENTS: Change dot color
+        'circle-color': '#ff0000',  // 🗺️ STUDENTS: Change dot color (red)
         'circle-radius': dotSize,
         'circle-opacity': opacity
       }
@@ -1016,15 +1016,16 @@ function updateLegend() {
     html += `<div class="legend-title">Population (indicative values)</div>`;
     html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
     
-    html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r1*2) - 4}" text-anchor="middle" font-size="11">1,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r2*2) - 4}" text-anchor="middle" font-size="11">10,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">50,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="rgba(255,0,0,0.25)" stroke="red" stroke-width="0.8"></circle>`;
+    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="rgba(255,0,0,0.25)" stroke="none"></circle>`;
     html += `<text x="${cx}" y="${baseY - (r4*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
-    // 🗺️ STUDENTS: Change circle colors by modifying fill="rgba(...)" and stroke="..." above
+    // 🗺️ STUDENTS: Change circle colors by modifying fill="rgba(...)" above
+    // Note: stroke="none" means no outline, circles are transparent matching the map
     
     html += `</svg></div><hr>`;
   }
@@ -1043,8 +1044,8 @@ function updateLegend() {
   if (enabledLayers.dots) {
     // 🌍 STUDENTS: Change "Population density" to your preferred legend title
     html += `<div class="legend-title">Population density</div>`;
-    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
-    // 🗺️ STUDENTS: Change fill="#000" for dot color and "500 people" to match your data
+    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#ff0000"/></svg><div>1 dot = 500 people</div></div>`;
+    // 🗺️ STUDENTS: Change fill="#ff0000" for dot color and "500 people" to match your data
     html += '<hr>';
   }
 
@@ -1330,11 +1331,11 @@ console.log(layerDefinitions);
      7. VISUALIZATION COLORS (🗺️ = OPTIONAL):
         🗺️ Proportional symbols color (Line ~747) - 'rgba(255,0,0,0.25)'
         🗺️ Contour line color (Line ~808) - '#8B0000'
-        🗺️ Dot color (Line ~841) - '#000000'
+        🗺️ Dot color (Line ~841) - '#ff0000' (red)
         🗺️ Boundary color (Line ~864) - '#bbbbbb'
         
         NOTE: Circle colors in legend (Lines ~955-962) will automatically
-        match your proportional symbols color settings
+        match your proportional symbols color settings (transparent, no stroke)
      
      ============================================================
      
