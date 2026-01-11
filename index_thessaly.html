@@ -157,10 +157,12 @@ MapLibre GL JavaScript
 </div>
 
 <!-- Layer controls panel (left side of screen) -->
+<!-- 🌍 STUDENTS: You can change the layer names shown to users by editing the <strong> text below -->
 <div id="controls">
   <strong>Layers</strong><br><br>
 
   <!-- Layer 1: Population Density Choropleth Map -->
+  <!-- 🌍 STUDENTS: Change "Population Density (Choropleth Map)" to your preferred layer name -->
   <input type="checkbox" id="popdensToggle"> <strong>Population Density (Choropleth Map)</strong><br>
   <div class="layer-controls" id="popdensControls">
     <label>Classification method:
@@ -187,6 +189,7 @@ MapLibre GL JavaScript
   <hr>
 
   <!-- Layer 2: Population Density Dasymmetric Map -->
+  <!-- 🌍 STUDENTS: Change "Population Density (Dasymmetric Map)" to your preferred layer name -->
   <input type="checkbox" id="denscoverToggle"> <strong>Population Density (Dasymmetric Map)</strong><br>
   <div class="layer-controls" id="denscoverControls">
     <label>Classification method:
@@ -213,6 +216,7 @@ MapLibre GL JavaScript
   <hr>
 
   <!-- Layer 3: Population Proportional Symbols -->
+  <!-- 🌍 STUDENTS: Change "Population (Proportional symbols)" to your preferred layer name -->
   <input type="checkbox" id="poipopToggle"> <strong>Population (Proportional symbols)</strong><br>
   <div class="layer-controls" id="poipopControls">
     <label>Maximum circle radius (px): <span id="maxRadiusLabel" class="control-value">70</span>
@@ -228,6 +232,7 @@ MapLibre GL JavaScript
   <hr>
 
   <!-- Layer 4: Population Dynamic Contours (Isopleths) -->
+  <!-- 🌍 STUDENTS: Change "Population dynamic (Isopleths map)" to your preferred layer name -->
   <input type="checkbox" id="contoursToggle"> <strong>Population dynamic (Isopleths map)</strong><br>
   <div class="layer-controls" id="contoursControls">
     <label>Opacity (contours): <span id="contoursOpacityLabel" class="control-value">80%</span>
@@ -237,6 +242,7 @@ MapLibre GL JavaScript
   <hr>
 
   <!-- Layer 5: Population Dot Map -->
+  <!-- 🌍 STUDENTS: Change "Population (Dot map)" to your preferred layer name -->
   <input type="checkbox" id="dotsToggle"> <strong>Population (Dot map)</strong><br>
   <div class="layer-controls" id="dotsControls">
     <label>Dot size (px): <span id="dotSizeLabel" class="control-value">1.9</span>
@@ -249,6 +255,7 @@ MapLibre GL JavaScript
   <hr>
 
   <!-- Layer 6: Municipal Boundaries -->
+  <!-- 🌍 STUDENTS: Change "Municipal boundaries" to your preferred layer name -->
   <input type="checkbox" id="boundariesToggle"> <strong>Municipal boundaries</strong><br>
   <div class="layer-controls" id="boundariesControls">
     <label>Opacity (boundaries): <span id="boundariesOpacityLabel" class="control-value">100%</span>
@@ -379,6 +386,8 @@ const enabledLayers = {
 
 /* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS layer) */
 // 🗺️ Change these hex colors to customize your choropleth appearance
+// IMPORTANT: If you change these colors, you must also update the legend colors
+// The legend is generated dynamically and will automatically use these colors
 const colorSchemes = {
   3: ['#ffcccc', '#ff6666', '#990000'],           // 3 classes = 4 colors (lightest to darkest)
   4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
@@ -389,6 +398,8 @@ const colorSchemes = {
 
 /* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
 // 🗺️ Change these hex colors (red scheme to match choropleth)
+// IMPORTANT: If you change these colors, you must also update the legend colors
+// The legend is generated dynamically and will automatically use these colors
 const denscoverColorSchemes = {
   3: ['#ffcccc', '#ff6666', '#990000'],
   4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
@@ -398,10 +409,26 @@ const denscoverColorSchemes = {
 };
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR POPDENS */
+// These break values define the class boundaries for custom classification
+// IMPORTANT: The number of colors must equal number of breaks + 1
+// Example: 5 breaks = 6 colors (one for each range: <break1, break1-break2, ..., >break5)
+// 
+// To change custom breaks:
+// 1. Modify the values in customBreaks array below
+// 2. Modify the colors in customColors array below (must have one more color than breaks)
+// 3. The legend will automatically update with your new breaks and colors
 const customBreaks = [30, 75, 150, 300, 600];
 const customColors = ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#de2d26'];
 
 /* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
+// These break values define the class boundaries for custom classification in dasymmetric map
+// IMPORTANT: The number of colors must equal number of breaks + 1
+// Example: 5 breaks = 6 colors (one for each range: <break1, break1-break2, ..., >break5)
+// 
+// To change custom breaks:
+// 1. Modify the values in denscoverCustomBreaks array below
+// 2. Modify the colors in denscoverCustomColors array below (must have one more color than breaks)
+// 3. The legend will automatically update with your new breaks and colors
 const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
 const denscoverCustomColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000', '#660000'];
 
@@ -935,6 +962,7 @@ function updateLegend() {
     const breaks = layerDefinitions.popdens.breaks;
     const colors = layerDefinitions.popdens.colors;
     
+    // 🌍 STUDENTS: Change "Choropleth map (people / km²)" to your preferred legend title
     html += `<div class="legend-title">Choropleth map (people / km²)</div>`;
     html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
     
@@ -951,6 +979,7 @@ function updateLegend() {
     const breaks = layerDefinitions.denscover.breaks;
     const colors = layerDefinitions.denscover.colors;
     
+    // 🌍 STUDENTS: Change "Dasymmetric map (people / km² by land cover zone)" to your preferred legend title
     html += `<div class="legend-title">Dasymmetric map (people / km² by land cover zone)</div>`;
     html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
     
@@ -983,6 +1012,7 @@ function updateLegend() {
     const cx = 110;
     const baseY = svgHeight - 10;
 
+    // 🌍 STUDENTS: Change "Population (indicative values)" to your preferred legend title
     html += `<div class="legend-title">Population (indicative values)</div>`;
     html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
     
@@ -1001,6 +1031,7 @@ function updateLegend() {
 
   // Contours legend
   if (enabledLayers.contours) {
+    // 🌍 STUDENTS: Change "Population dynamic (2M & 4M)" to your preferred legend title
     html += `<div class="legend-title">Population dynamic (2M & 4M)</div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
     html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="1.2"/></svg><div>Secondary (Id = 2)</div></div>`;
@@ -1010,6 +1041,7 @@ function updateLegend() {
 
   // Dot map legend
   if (enabledLayers.dots) {
+    // 🌍 STUDENTS: Change "Population density" to your preferred legend title
     html += `<div class="legend-title">Population density</div>`;
     html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#000"/></svg><div>1 dot = 500 people</div></div>`;
     // 🗺️ STUDENTS: Change fill="#000" for dot color and "500 people" to match your data
@@ -1259,6 +1291,20 @@ console.log(layerDefinitions);
         🗺️ colorSchemes - Colors for choropleth map
         🗺️ denscoverColorSchemes - Colors for dasymmetric map
         🗺️ customBreaks & customColors - Custom classification values
+        
+        IMPORTANT - How to change colors:
+        - Colors are automatically used in BOTH the map AND the legend
+        - Change colors in the colorSchemes object (Lines ~437-444)
+        - The legend will automatically update with your new colors
+        - Use hex format: '#RRGGBB' (e.g., '#ff0000' = red)
+        - Number of colors = Number of classes
+        
+        IMPORTANT - How to change custom breaks:
+        - For Choropleth: Edit customBreaks (Line ~449) and customColors (Line ~450)
+        - For Dasymmetric: Edit denscoverCustomBreaks (Line ~461) and denscoverCustomColors (Line ~462)
+        - Rule: Number of colors MUST equal number of breaks + 1
+        - Example: 5 breaks = 6 colors (one for each range)
+        - Legend automatically updates with your new breaks and colors
      
      4. LEGEND TITLE (Lines ~885-897):
         🌍 Main title text
@@ -1266,11 +1312,29 @@ console.log(layerDefinitions);
         🌍 Your name and institution
         🌍 Student ID
      
-     5. VISUALIZATION COLORS (🗺️ = OPTIONAL):
+     5. LAYER NAMES (in HTML controls section):
+        🌍 Lines ~172-246 - Change layer names shown in left control panel
+        - Change text inside <strong> tags
+        - Example: Change "Population Density (Choropleth Map)" to your name
+        - These are the names users see when selecting layers
+     
+     6. LEGEND TITLES (in JavaScript updateLegend function):
+        🌍 Choropleth legend title (Line ~906)
+        🌍 Dasymmetric legend title (Line ~921)
+        🌍 Proportional symbols legend title (Line ~940)
+        🌍 Contours legend title (Line ~964)
+        🌍 Dots legend title (Line ~973)
+        - These titles appear in the legend when layers are active
+        - Change the text inside the quotes in the html += lines
+     
+     7. VISUALIZATION COLORS (🗺️ = OPTIONAL):
         🗺️ Proportional symbols color (Line ~747) - 'rgba(255,0,0,0.25)'
         🗺️ Contour line color (Line ~808) - '#8B0000'
         🗺️ Dot color (Line ~841) - '#000000'
         🗺️ Boundary color (Line ~864) - '#bbbbbb'
+        
+        NOTE: Circle colors in legend (Lines ~955-962) will automatically
+        match your proportional symbols color settings
      
      ============================================================
      
@@ -1283,7 +1347,39 @@ console.log(layerDefinitions);
      - Verify all file paths in layerDefinitions are correct
      - Ensure GeoJSON files exist at those locations
      
+     Problem: Changed colors but legend still shows old colors
+     Solution:
+     - The legend updates automatically - you only need to change colorSchemes
+     - Reload the page (F5) to see changes
+     - Make sure you saved the HTML file before reloading
+     - Check browser cache: Try Ctrl+Shift+R (hard refresh)
+     
+     Problem: Custom breaks not working or showing errors
+     Solution:
+     - Check that customColors has exactly one more color than customBreaks
+     - Example: 5 breaks needs 6 colors
+     - Breaks must be in ascending order: [10, 50, 100, 200, 500]
+     - Colors format: ['#color1', '#color2', '#color3']
+     - Select "Custom intervals" in classification method dropdown
+     
+     Problem: Changed layer name but still shows old name
+     Solution:
+     - Layer names appear in TWO places:
+       1. Control panel (HTML, lines ~172-246) - name shown in checkbox
+       2. Legend (JavaScript, lines ~906-973) - title in legend
+     - You may need to change BOTH locations
+     - Control panel changes are in HTML <strong> tags
+     - Legend changes are in JavaScript html += lines
+     
+     Problem: Colors look different on map vs legend
+     Solution:
+     - Map and legend use the SAME colors from colorSchemes
+     - Check if opacity is affecting appearance
+     - Legend shows solid colors; map may have transparency
+     - Try adjusting opacity slider to match legend appearance
+     
      Problem: Choropleth/Dasymmetric shows wrong colors
+     Solution:
      Solution:
      - Check dataField matches your GeoJSON column name exactly (case-sensitive!)
      - Verify your data contains numeric values, not text
@@ -1388,6 +1484,90 @@ console.log(layerDefinitions);
      8. Test with both Light and Dark basemaps
      9. Consider color blindness when choosing colors
      10. Document your data sources and methods
+     
+     ============================================================
+     
+     📝 STEP-BY-STEP CUSTOMIZATION GUIDE:
+     
+     🎨 HOW TO CHANGE COLORS:
+     
+     For Choropleth Map:
+     1. Find colorSchemes object (Lines ~437-444)
+     2. Change hex color values (e.g., '#ffcccc' to '#ccffcc')
+     3. Save file and refresh browser
+     4. Legend will automatically show new colors
+     
+     For Dasymmetric Map:
+     1. Find denscoverColorSchemes object (Lines ~451-458)
+     2. Change hex color values
+     3. Save and refresh
+     4. Legend updates automatically
+     
+     For Custom Classification Colors:
+     1. Find customColors (Line ~450) or denscoverCustomColors (Line ~462)
+     2. Change hex color values: ['#color1', '#color2', '#color3', ...]
+     3. Remember: Number of colors = Number of breaks + 1
+     4. Save and refresh
+     
+     🔢 HOW TO CHANGE CUSTOM BREAKS:
+     
+     For Choropleth Map:
+     1. Find customBreaks (Line ~449)
+     2. Change values: [30, 75, 150, 300, 600]
+     3. Find customColors (Line ~450)
+     4. Ensure you have one more color than breaks
+     5. Save and refresh
+     6. Select "Custom intervals" in dropdown to see changes
+     
+     For Dasymmetric Map:
+     1. Find denscoverCustomBreaks (Line ~461)
+     2. Change values: [500, 1500, 3500, 6000, 8500]
+     3. Find denscoverCustomColors (Line ~462)
+     4. Ensure you have one more color than breaks
+     5. Save and refresh
+     6. Select "Custom intervals" in dropdown to see changes
+     
+     📛 HOW TO CHANGE LAYER NAMES:
+     
+     In Control Panel (what users click):
+     1. Find HTML section Lines ~172-246
+     2. Locate <strong>Layer Name</strong> for each layer
+     3. Change text inside <strong> tags
+     4. Example: <strong>Population Density (Choropleth Map)</strong>
+        becomes: <strong>My Custom Name</strong>
+     5. Save and refresh
+     
+     In Legend (titles shown when layer is active):
+     1. Find updateLegend() function (starting Line ~883)
+     2. Locate html += `<div class="legend-title">...</div>` lines
+     3. Change text inside the quotes
+     4. Examples:
+        - Line ~906: Change "Choropleth map (people / km²)"
+        - Line ~921: Change "Dasymmetric map (people / km² by land cover zone)"
+        - Line ~940: Change "Population (indicative values)"
+        - Line ~964: Change "Population dynamic (2M & 4M)"
+        - Line ~973: Change "Population density"
+     5. Save and refresh
+     
+     ⚠️ IMPORTANT RULES:
+     
+     1. Color Arrays:
+        - Must use square brackets: ['#color1', '#color2']
+        - Must use quotes around each color: '#ff0000'
+        - Colors separated by commas
+        - Number of colors in custom = Number of breaks + 1
+     
+     2. Break Arrays:
+        - Must be in ascending order: [10, 50, 100, 500]
+        - Use square brackets: [value1, value2, value3]
+        - No quotes needed for numbers
+        - Values separated by commas
+     
+     3. Testing Changes:
+        - Always save file before refreshing browser
+        - Use F5 or Ctrl+R to refresh
+        - Use Ctrl+Shift+R for hard refresh (clears cache)
+        - Check browser console (F12) for error messages
      
      ============================================================
      
