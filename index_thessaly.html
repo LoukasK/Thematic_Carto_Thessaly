@@ -1,286 +1,288 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<title>Thessalia Cartography – Interactive Map</title>
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-
-<!-- ============================================================
-     EXTERNAL LIBRARIES - MAPLIBRE GL
-     ============================================================
-     MapLibre GL is an open-source library for displaying interactive maps
-     We need both the CSS (for styling) and JavaScript (for functionality)
-     ============================================================ -->
-
-<!--
-MapLibre GL CSS
-- Provides the visual styling for the map
-- Styles map controls (zoom buttons, attribution, scale bar)
-- Ensures correct layout and appearance of the map canvas
--->
-<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-
-<!--
-MapLibre GL JavaScript
-- Core MapLibre library for web mapping
-- Handles map rendering using WebGL
-- Enables interaction (zoom, pan, rotation)
-- Supports loading layers, GeoJSON data, and user events
--->
-<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
-<!-- ============================================================
-     CSS STYLING SECTION
-     ============================================================
-     This <style> section contains all the visual styling rules for:
-     - Map container layout
-     - Control panels (left side)
-     - Legend (top right) 
-     - Buttons, sliders, and other UI elements
-     
-     Students: You generally don't need to modify CSS unless you want
-     to change the appearance of the interface itself
-     ============================================================ -->
-<style>
-  body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
-  #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-
-  #styleSelector {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 6;
-    background: white;
-    padding: 6px;
-    border-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-  }
-
-  #controls {
-    position: absolute;
-    top: 60px;
-    left: 10px;
-    z-index: 6;
-    background: white;
-    padding: 10px;
-    font-size: 13px;
-    border-radius: 6px;
-    width: 300px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  }
-  .layer-controls { margin-top:6px; padding:8px; background:#fafafa; border-radius:4px; display:none; }
-  .layer-controls label { display:block; font-size:12px; margin-top:6px; }
-  .layer-controls input[type="range"], .layer-controls select { width:100%; margin-top:4px; }
-
-  #legend {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 6;
-    background: white;
-    padding: 18px;
-    font-size: 13px;
-    border-radius: 6px;
-    max-width: 360px;
-    max-height: 85vh;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    display: none;
-    resize: both;
-    overflow: auto;
-    min-width: 200px;
-    min-height: 100px;
-  }
+  <meta charset="utf-8" />
+  <title>Population Timelapse – Thessaly</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
   
-  /* 🌍 STUDENTS - MODIFY HEADER STYLES: Change title/subtitle/author font sizes and colors here */
-  .legend-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #333;
-  }
-  .legend-map-title {
-    font-size: 15px; /* 🌍 STUDENTS: Adjust size for main title */
-    font-weight: 700;
-    color: #000; /* 🌍 STUDENTS: Change hex code for different title color */
-    margin-bottom: 10px;
-    line-height: 1.4;
-    text-align: center;
-  }
-  .legend-subtitle {
-    font-size: 11px; /* 🌍 STUDENTS: Adjust size for subtitle */
-    font-style: italic;
-    color: #333; /* 🌍 STUDENTS: Change subtitle color */
-    margin-bottom: 10px;
-    line-height: 1.3;
-    text-align: center;
-  }
-  .legend-author {
-    font-size: 10px; /* 🌍 STUDENTS: Adjust size for author information */
-    color: #555; /* 🌍 STUDENTS: Change author text color */
-    line-height: 1.4;
-    text-align: left;
-  }
-  .legend-author strong {
-    font-weight: 700;
-  }
+  <!-- ============================================================
+       EXTERNAL LIBRARIES - MAPLIBRE GL
+       ============================================================
+       MapLibre GL is an open-source library for displaying interactive maps
+       We need both the CSS (for styling) and JavaScript (for functionality)
+       ============================================================ -->
   
-  .legend-row { display:flex; align-items:center; margin-bottom:8px; }
-  .legend-color { width:20px; height:20px; margin-right:8px; border-radius:3px; flex:none; }
-  .legend-line { width:40px; height:14px; margin-right:8px; flex:none; }
-  .legend-title { font-weight:700; margin-bottom:8px; display:block; }
-  .control-value { font-weight:700; margin-left:6px; color:#333; }
-  hr { border: none; border-top: 1px solid #eee; margin:8px 0; }
-</style>
-<!-- ============================================================
-     END OF CSS STYLING SECTION
-     ============================================================ -->
+  <!--
+  MapLibre GL CSS
+  - Provides the visual styling for the map
+  - Styles map controls (zoom buttons, attribution, scale bar)
+  - Ensures correct layout and appearance of the map canvas
+  -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  
+  <!--
+  MapLibre GL JavaScript
+  - Core MapLibre library for web mapping
+  - Handles map rendering using WebGL
+  - Enables interaction (zoom, pan, rotation)
+  - Supports loading layers, GeoJSON data, and user events
+  -->
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  
+  <!-- ============================================================
+       CSS STYLING SECTION
+       ============================================================
+       This <style> section contains all the visual styling rules for:
+       - Map container layout
+       - Legend panel (bottom-left)
+       - Timeline controls (bottom-right)
+       - Buttons, sliders, and other UI elements
+       
+       Students: You generally don't need to modify CSS unless you want
+       to change the appearance of the interface itself
+       ============================================================ -->
+  <style>
+    /* Make map fill entire browser window */
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    
+    /* Legend box styling - positioned at bottom-left */
+    .legend-box {
+      position: absolute; 
+      bottom: 30px; 
+      left: 10px;
+      background-color: white; 
+      padding: 15px;
+      font-family: Arial, sans-serif; 
+      font-size: 13px;
+      border-radius: 5px; 
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      z-index: 1; 
+      resize: both;        /* Allows user to drag corner and resize */
+      overflow: auto;      /* Allows scrolling when content exceeds size */
+      min-width: 200px; 
+      min-height: 250px;
+      max-width: 600px; 
+      max-height: 85vh;    /* 85% of viewport height */
+    }
+    
+    /* 🌍 STUDENTS - MODIFY HEADER STYLES: Change title/subtitle/author font sizes and colors here */
+    .legend-header-title {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #333; /* 🗺️ STUDENTS: Change color for different separator line */
+    }
+    .legend-map-title {
+      font-size: 14px; /* 🌍 STUDENTS: Adjust size for main title */
+      font-weight: 700; /* 🗺️ STUDENTS: 700 = bold, 400 = normal */
+      color: #000; /* 🌍 STUDENTS: Change hex code for different title color */
+      margin-bottom: 8px;
+      line-height: 1.3;
+      text-align: center; /* 🗺️ STUDENTS: Options: left, center, right */
+    }
+    .legend-data-source {
+      font-size: 10px; /* 🌍 STUDENTS: Adjust size for data source */
+      font-style: italic; /* 🗺️ STUDENTS: Remove this line for non-italic text */
+      color: #555; /* 🌍 STUDENTS: Slightly lighter than title */
+      margin-bottom: 8px;
+      line-height: 1.3;
+      text-align: center;
+    }
+    .legend-author {
+      font-size: 9px; /* 🌍 STUDENTS: Adjust size for author information */
+      color: #666; /* 🌍 STUDENTS: Lighter color for secondary information */
+      line-height: 1.3;
+      text-align: left; /* 🗺️ STUDENTS: Author info typically left-aligned */
+    }
+    .legend-author strong {
+      font-weight: 700; /* 🗺️ STUDENTS: Makes "Produced by:" bold */
+    }
+    
+    .legend-section-title { 
+      font-weight: bold;
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+    .legend-content { 
+      width: 100%; 
+      overflow: visible; 
+    }
+    
+    /* Timeline control panel styling - positioned at bottom-right */
+    #timeline {
+      position: absolute; 
+      bottom: 30px; 
+      right: 10px;
+      background: white; 
+      padding: 12px 15px; 
+      border-radius: 5px;
+      font-family: Arial, sans-serif; 
+      font-size: 13px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3); 
+      z-index: 2; 
+      text-align: center;
+    }
+    
+    /* Slider controls */
+    #yearSlider, #speedSlider, #maxRadiusSlider, #opacitySlider { 
+      width: 180px; 
+      margin-top: 5px;
+    }
+    
+    /* Play/Pause button styling */
+    #playPauseBtn { 
+      margin-top: 8px; 
+      padding: 6px 12px; 
+      font-size: 13px;
+      cursor: pointer; 
+      border-radius: 3px;
+      border: 1px solid #ccc; 
+      background: #f5f5f5;
+    }
+    #playPauseBtn:hover {
+      background: #e0e0e0;  /* Slightly darker when mouse hovers over button */
+    }
+    
+    /* Labels and values in control panel */
+    .control-label { 
+      font-size: 11px; 
+      color: #666; 
+      margin-top: 8px; 
+    }
+    .control-value { 
+      font-weight: bold; 
+      color: #333; 
+    }
+  </style>
+  <!-- ============================================================
+       END OF CSS STYLING SECTION
+       ============================================================ -->
 </head>
 <body>
 
 <!-- ============================================================
      HTML STRUCTURE SECTION - USER INTERFACE ELEMENTS
      ============================================================
-     This section defines the visual interface that users interact with:
-     - Basemap selector (Light/Dark)
-     - Layer checkboxes and controls (left panel)
-     - Legend (right panel, dynamically updated by JavaScript)
-     - Map container (fills the entire background)
+     This section contains all the visible UI elements that users interact with:
+     - Basemap selector dropdown (top-left)
+     - Legend panel (bottom-left) - shows circle sizes and map credits
+     - Timeline control panel (bottom-right) - year slider, play/pause, settings
+     - Map container (fills entire background)
      ============================================================ -->
 
-<!-- Basemap selector dropdown (Light or Dark background map) -->
-<div id="styleSelector">
-  <select id="basemapSelect">
-    <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
-    <option value="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" selected>Dark</option>
-  </select>
-</div>
+<!-- BASEMAP SELECTOR (Top-left corner) -->
+<!-- Allows user to switch between Light and Dark background maps -->
+<select id="styleSelector" style="position:absolute;top:10px;left:10px;z-index:3;padding:5px;border-radius:3px;">
+  <option value="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json">Light</option>
+  <option value="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json">Dark</option>
+  <!-- 🗺️ STUDENTS: Add more basemap options like this:
+  <option value="URL_TO_BASEMAP_STYLE">Your Basemap Name</option>
+  Examples:
+  - OpenStreetMap: https://tiles.openfreemap.org/styles/liberty
+  - Satellite: Requires custom style JSON
+  -->
+</select>
 
-<!-- Layer controls panel (left side of screen) -->
-<!-- 🌍 STUDENTS: You can change the layer names shown to users by editing the <strong> text below -->
-<div id="controls">
-  <strong>Layers</strong><br><br>
-
-  <!-- Layer 1: Population Density Choropleth Map -->
-  <!-- 🌍 STUDENTS: Change "Population Density (Choropleth Map)" to your preferred layer name -->
-  <input type="checkbox" id="popdensToggle"> <strong>Population Density (Choropleth Map)</strong><br>
-  <div class="layer-controls" id="popdensControls">
-    <label>Classification method:
-      <select id="classificationMethod">
-        <option value="equal" selected>Equal interval (default)</option>
-        <option value="quantile">Quantiles</option>
-        <option value="natural">Natural breaks (Jenks)</option>
-        <option value="custom">Custom intervals</option>
-      </select>
-    </label>
-    <label id="numClassesLabel">Number of classes:
-      <select id="numClasses">
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5" selected>5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-      </select>
-    </label>
-    <label>Opacity: <span id="popdensOpacityLabel" class="control-value">60%</span>
-      <input type="range" id="popdensOpacity" min="0" max="100" value="60">
-    </label>
+<!-- LEGEND PANEL (Bottom-left corner) -->
+<!-- Contains map title, credits, and circle size legend -->
+<div id="legend" class="legend-box">
+  <!-- ============================================================
+       LEGEND HEADER (Fixed title and credits section)
+       ============================================================
+       🌍 STUDENTS: MODIFY THE TEXT BELOW TO CUSTOMIZE YOUR MAP'S TITLE AND CREDITS
+       
+       What to change:
+       1. Main title: Change "THESSALY POPULATION CHANGE 1991 - 2021" to your study area and time period
+       2. Data source: Update "Hellenic Statistical Authority" to your actual data source
+       3. Your name: Change "Loukas Katikas" to your name
+       4. Institution: Update university, school, laboratory, course, and academic year
+       
+       How to change styling:
+       - Title font size: Modify .legend-map-title font-size in CSS (currently: 14px)
+       - Title color: Modify .legend-map-title color in CSS (currently: #000 = black)
+       - Data source size: Modify .legend-data-source font-size in CSS (currently: 10px)
+       - Author size: Modify .legend-author font-size in CSS (currently: 9px)
+       - Border color: Modify .legend-header-title border-bottom color in CSS (currently: #333)
+       ============================================================ -->
+  <div class="legend-header-title">
+    <!-- Main map title -->
+    <div class="legend-map-title">
+      THESSALY POPULATION CHANGE<br>
+      1991 - 2021
+    </div>
+    
+    <!-- Author and institution information -->
+    <div class="legend-author">
+       <strong>Data source:</strong> Hellenic Statistical Authority - Population data 1991-2021<br>
+      <strong>Produced by:</strong> Loukas Katikas<br>
+      National Technical University of Athens (NTUA)<br>
+      School of Rural, Surveying & Geoinformatics Engineering<br>
+      Cartography Laboratory<br>
+      Thematic Cartography, Academic Year 2025-2026
+    </div>
   </div>
-  <hr>
-
-  <!-- Layer 2: Population Density Dasymmetric Map -->
-  <!-- 🌍 STUDENTS: Change "Population Density (Dasymmetric Map)" to your preferred layer name -->
-  <input type="checkbox" id="denscoverToggle"> <strong>Population Density (Dasymmetric Map)</strong><br>
-  <div class="layer-controls" id="denscoverControls">
-    <label>Classification method:
-      <select id="denscoverClassificationMethod">
-        <option value="equal" selected>Equal interval (default)</option>
-        <option value="quantile">Quantiles</option>
-        <option value="natural">Natural breaks (Jenks)</option>
-        <option value="custom">Custom intervals</option>
-      </select>
-    </label>
-    <label id="denscoverNumClassesLabel">Number of classes:
-      <select id="denscoverNumClasses">
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5" selected>5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-      </select>
-    </label>
-    <label>Opacity: <span id="denscoverOpacityLabel" class="control-value">60%</span>
-      <input type="range" id="denscoverOpacity" min="0" max="100" value="60">
-    </label>
+  
+  <!-- Legend section title -->
+  <div class="legend-section-title">Population (Municipal)</div>
+  
+  <!-- Legend content - SVG circles will be dynamically created by JavaScript -->
+  <!-- This is where the three representative circles will appear -->
+  <div class="legend-content">
+    <svg id="legendSvg" style="display: block; margin: 0 auto;"></svg>
   </div>
-  <hr>
-
-  <!-- Layer 3: Population Proportional Symbols -->
-  <!-- 🌍 STUDENTS: Change "Population (Proportional symbols)" to your preferred layer name -->
-  <input type="checkbox" id="poipopToggle"> <strong>Population (Proportional symbols)</strong><br>
-  <div class="layer-controls" id="poipopControls">
-    <label>Maximum circle radius (px): <span id="maxRadiusLabel" class="control-value">70</span>
-      <input type="range" id="maxRadius" min="20" max="200" value="70">
-    </label>
-    <label>Opacity (circles): <span id="poipopOpacityLabel" class="control-value">25%</span>
-      <input type="range" id="poipopOpacity" min="0" max="100" value="25">
-    </label>
-    <small style="display:block;margin-top:6px;color:#555">
-      <strong>Note (students):</strong> Flannery scaling is used for perceptual equality.
-    </small>
+  
+  <hr style="border: none; border-top: 1px solid #eee; margin: 12px 0;">
+  
+  <!-- Municipal boundaries legend item -->
+  <div style="display: flex; align-items: center; margin-top: 8px;">
+    <svg width="40" height="18" style="margin-right: 8px;">
+      <line x1="0" y1="9" x2="40" y2="9" stroke="rgb(200, 200, 200)" stroke-width="1.5"/>
+    </svg>
+    <div style="font-size: 12px;">Municipal boundaries</div>
   </div>
-  <hr>
-
-  <!-- Layer 4: Population Dynamic Contours (Isopleths) -->
-  <!-- 🌍 STUDENTS: Change "Population dynamic (Isopleth map)" to your preferred layer name -->
-  <input type="checkbox" id="contoursToggle"> <strong>Population dynamic (Isopleth map)</strong><br>
-  <div class="layer-controls" id="contoursControls">
-    <label>Opacity (contours): <span id="contoursOpacityLabel" class="control-value">80%</span>
-      <input type="range" id="contoursOpacity" min="0" max="100" value="80">
-    </label>
-  </div>
-  <hr>
-
-  <!-- Layer 5: Population Dot Map -->
-  <!-- 🌍 STUDENTS: Change "Population (Dot map)" to your preferred layer name -->
-  <input type="checkbox" id="dotsToggle"> <strong>Population (Dot map)</strong><br>
-  <div class="layer-controls" id="dotsControls">
-    <label>Dot size (px): <span id="dotSizeLabel" class="control-value">1.9</span>
-      <input type="range" id="dotSize" min="0.5" max="6" step="0.1" value="1.9">
-    </label>
-    <label>Opacity (dots): <span id="dotsOpacityLabel" class="control-value">100%</span>
-      <input type="range" id="dotsOpacity" min="0" max="100" value="100">
-    </label>
-  </div>
-  <hr>
-
-  <!-- Layer 6: Municipal Boundaries -->
-  <!-- 🌍 STUDENTS: Change "Municipal boundaries" to your preferred layer name -->
-  <input type="checkbox" id="boundariesToggle"> <strong>Municipal boundaries</strong><br>
-  <div class="layer-controls" id="boundariesControls">
-    <label>Opacity (boundaries): <span id="boundariesOpacityLabel" class="control-value">100%</span>
-      <input type="range" id="boundariesOpacity" min="0" max="100" value="100">
-    </label>
-  </div>
-  <hr>
-
-  <!-- Data notes for students -->
-  <div style="font-size:12px;color:#555">
-    <strong>Data notes (students)</strong><br>
-    - All GeoJSONs expected in <code>data/</code> folder<br>
-    - Fields: <code>POPDENS</code>, <code>DENS_COVER</code>, <code>POPMUN</code>, <code>ID</code>
+  
+  <!-- User hint for resizing -->
+  <div style="text-align: right; font-size: 10px; color: #999; margin-top: 10px;">
+    💡 Drag corner to resize
   </div>
 </div>
 
-<!-- Legend container (right side, dynamically populated by JavaScript) -->
-<div id="legend"></div>
+<!-- TIMELINE CONTROL PANEL (Bottom-right corner) -->
+<!-- Contains all animation and visualization controls -->
+<div id="timeline">
+  <!-- Current year display -->
+  <strong id="yearLabel">Year: 1991</strong><br>
+  
+  <!-- Year slider - manually select which year to display -->
+  <!-- Range 0-3 corresponds to 4 time periods (1991, 2001, 2011, 2021) -->
+  <input type="range" min="0" max="3" value="0" id="yearSlider"><br>
+  
+  <!-- Play/Pause button for automatic animation -->
+  <button id="playPauseBtn">▶ Play</button><br>
+  
+  <!-- Speed control - how fast animation plays (in milliseconds per frame) -->
+  <div class="control-label">Speed (ms/frame):</div>
+  <input type="range" min="200" max="2000" value="1000" step="100" id="speedSlider">
+  <span class="control-value" id="speedLabel">1000</span> ms<br>
+  
+  <!-- Max circle radius - controls maximum size of circles -->
+  <div class="control-label">Max Circle Radius (px):</div>
+  <input type="range" min="30" max="150" value="100" id="maxRadiusSlider">
+  <span class="control-value" id="maxRadiusValue">100</span> px<br>
+  
+  <!-- Opacity control - transparency of circles (0% = invisible, 100% = solid) -->
+  <div class="control-label">Opacity:</div>
+  <input type="range" min="0" max="100" value="40" id="opacitySlider">
+  <span class="control-value" id="opacityValue">40</span>%
+</div>
 
-<!-- Map container (fills entire background) -->
+<!-- Map container - MapLibre will render the interactive map here -->
 <div id="map"></div>
 
 <!-- ============================================================
      END OF HTML STRUCTURE SECTION
      ============================================================ -->
+
 
 <!-- ============================================================
      JAVASCRIPT SECTION - APPLICATION LOGIC
@@ -288,994 +290,867 @@ MapLibre GL JavaScript
      Everything between <script> and </script> tags is JavaScript code.
      
      This section is organized into the following parts:
-     1. MAP INITIALIZATION - Creates the map object
-     2. DATA CONFIGURATION - Define where data files are located
-     3. COLOR SCHEMES - Define colors for visualizations
-     4. CLASSIFICATION FUNCTIONS - Calculate class breaks for choropleth maps
-     5. LAYER LOADING FUNCTIONS - Load and display each layer type
-     6. LEGEND GENERATION - Creates dynamic legend based on active layers
-     7. EVENT LISTENERS - Responds to user interactions
+     1. CONFIGURATION - Settings you MUST change for your project
+     2. MAP INITIALIZATION - Creates the map object
+     3. STATE VARIABLES - Tracks current application state
+     4. DATA LOADING - Fetches and processes GeoJSON files
+     5. BOUNDARY LAYER - Adds municipality boundaries to map
+     6. FLANNERY SCALING - Calculates perceptually accurate circle sizes
+     7. VISUALIZATION - Updates map display for each year
+     8. LEGEND GENERATION - Creates dynamic legend with circle examples
+     9. EVENT HANDLERS - Responds to user interactions
+     10. ANIMATION CONTROLS - Manages play/pause functionality
      
      Students: Focus on sections marked with 🌍 (mandatory changes)
      and 🗺️ (optional styling changes)
      ============================================================ -->
 <script>
+  // ============================================================
+  // 1. CONFIGURATION SECTION
+  // ============================================================
+  // 🌍 STUDENTS: YOU MUST MODIFY THESE VALUES FOR YOUR PROJECT
+  // ============================================================
+  
+  /**
+   * YEAR_COLUMNS: Array of column names in your GeoJSON that contain population data
+   * 🌍 STUDENTS: Change these to match YOUR GeoJSON column names
+   * 
+   * Example 1: If your columns are named 'Pop_1990', 'Pop_2000', 'Pop_2010', 'Pop_2020'
+   *    const YEAR_COLUMNS = ['Pop_1990', 'Pop_2000', 'Pop_2010', 'Pop_2020'];
+   * 
+   * Example 2: If your columns are named 'population_2015', 'population_2020'
+   *    const YEAR_COLUMNS = ['population_2015', 'population_2020'];
+   * 
+   * IMPORTANT: Column names are case-sensitive! Make sure they match exactly.
+   */
+  const YEAR_COLUMNS = ['POP1991', 'POP2001', 'POP2011', 'POP2021'];
+  
+  /**
+   * YEARS: Array of the actual year values that correspond to each column
+   * 🌍 STUDENTS: Change these to match YOUR time periods
+   * 
+   * Must have the same number of elements as YEAR_COLUMNS!
+   * These are the years that will be displayed in the UI.
+   */
+  const YEARS = [1991, 2001, 2011, 2021];
+  
+  /**
+   * DATA_PATH: Location of your GeoJSON file with point data (population centroids)
+   * 🌍 STUDENTS: Change this to point to YOUR data file
+   * 
+   * For local development:
+   *    - Use relative path like 'data/your_file.geojson'
+   *    - Make sure the file exists in that location
+   * 
+   * For GitHub Pages:
+   *    - Same relative path works
+   *    - Ensure file is committed to your repository
+   * 
+   * For external hosting:
+   *    - Use full URL like 'https://example.com/data/file.geojson'
+   */
+  const DATA_PATH = 'data_timelapse/dimoi_poipop_WGS.geojson';
+  
+  /**
+   * BOUNDARIES_PATH: Location of your GeoJSON file with polygon boundaries
+   * 🌍 STUDENTS: Change this to point to YOUR boundary file
+   * 
+   * This file should contain polygon geometries that define the boundaries
+   * of your municipalities, districts, or administrative areas.
+   * 
+   * The boundaries will be displayed as outlined polygons beneath the 
+   * population circles, providing geographic context.
+   */
+  const BOUNDARIES_PATH = 'data_timelapse/dimoi_oria_WGS.geojson';
 
-// ============================================================
-// 1. MAP INITIALIZATION
-// ============================================================
-// This creates the interactive map object that will display everything
+  // ============================================================
+  // 2. MAP INITIALIZATION
+  // ============================================================
+  // Creates the MapLibre map object that will display everything
+  
+  /**
+   * 🌍 STUDENTS: Change center coordinates and zoom level for your study area
+   * 
+   * center: [longitude, latitude]
+   * - Longitude: -180 to 180 (negative = west, positive = east)
+   * - Latitude: -90 to 90 (negative = south, positive = north)
+   * 
+   * zoom: 0 to 20
+   * - 0 = entire world visible
+   * - 10 = city level
+   * - 15 = neighborhood level
+   * - 20 = building level
+   * 
+   * How to find coordinates:
+   * 1. Go to Google Maps
+   * 2. Right-click on your study area
+   * 3. Click on the coordinates that appear
+   * 4. Copy the numbers (latitude, longitude)
+   * 5. Swap them to (longitude, latitude) for MapLibre
+   */
+  let map = new maplibregl.Map({
+    container: 'map',           // HTML element ID to render map in (don't change this)
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // Default basemap style
+    center: [22.4, 39.6],       // 🌍 STUDENTS: [longitude, latitude] - CHANGE THIS!
+    zoom: 8                     // 🌍 STUDENTS: Initial zoom level - CHANGE THIS!
+  });
 
-/* 🌍 STUDENTS - MODIFY MAP CENTER AND ZOOM */
-const map = new maplibregl.Map({
-  container: 'map',           // Links to the <div id="map"> element in HTML
-  style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',  // Initial basemap style
-  center: [22.4, 39.6],       // 🌍 STUDENTS: [longitude, latitude] for your study area
-  zoom: 8                     // 🌍 STUDENTS: Zoom level (0=world, 20=street level)
-});
+  // ============================================================
+  // 3. STATE VARIABLES
+  // ============================================================
+  // These variables track the current state of the application
+  // They are updated as the user interacts with the map
+  
+  let geojsonData = null;         // Stores the loaded GeoJSON data (null until loaded)
+  let boundariesData = null;      // Stores the loaded boundary polygons (null until loaded)
+  let minPopulation = 0;          // Minimum population value across ALL years (for scaling)
+  let maxPopulation = 0;          // Maximum population value across ALL years (for scaling)
+  let intervalId = null;          // ID for the animation timer (needed to stop animation)
+  let isPlaying = false;          // Whether animation is currently playing (true/false)
+  let speed = 1000;               // Animation speed in milliseconds per frame (1000 = 1 second)
+  let maxRadius = 100;            // Maximum circle radius in pixels (adjustable by user) - START WITH 100px
+  let opacity = 0.4;              // Circle opacity from 0.0 (invisible) to 1.0 (solid)
+  let currentYearIndex = 0;       // Currently displayed year index (0 = first year, 1 = second, etc.)
 
-// ============================================================
-// 2. DATA CONFIGURATION
-// ============================================================
-// This object defines where each GeoJSON file is located and which
-// field contains the data to visualize
-
-/* 🌍 STUDENTS - MODIFY DATA FILE PATHS AND FIELD NAMES */
-const layerDefinitions = {
-  // Choropleth map layer (population density by municipality)
-  popdens: {
-    sourceId: 'popdens-src',                       // Internal ID for the data source
-    layerId: 'popdens-layer',                      // Internal ID for the map layer
-    url: 'data/dimoi_popdens_WGS.geojson',        // 🌍 STUDENTS: Path to your file
-    dataField: 'POPDENS'                           // 🌍 STUDENTS: Column name in your GeoJSON
-  },
-  // Dasymmetric map layer (population density by land cover zone)
-  denscover: {
-    sourceId: 'denscover-src',
-    layerId: 'denscover-layer',
-    url: 'data/dimoi_popdens_cover_WGS.geojson',  // 🌍 STUDENTS: Path to your file
-    dataField: 'DENS_COVER'                        // 🌍 STUDENTS: Column name in your GeoJSON
-  },
-  // Proportional symbols layer (circles sized by population)
-  poipop: {
-    sourceId: 'poipop-src',
-    layerId: 'poipop-layer',
-    url: 'data/dimoi_poi_pop_WGS.geojson',        // 🌍 STUDENTS: Path to your file
-    dataField: 'POPMUN',                           // 🌍 STUDENTS: Column name in your GeoJSON
-    maxValueApprox: 100000                         // 🌍 STUDENTS: Approximate maximum value (for scaling circles)
-  },
-  // Contours/isopleths layer (population potential lines)
-  contours: {
-    sourceId: 'contours-src',
-    layerId: 'contours-layer',
-    url: 'data/pop_contours_200k_WGS.geojson'     // 🌍 STUDENTS: Path to your file
-  },
-  // Dot density layer (each dot represents X people)
-  dots: {
-    sourceId: 'dots-src',
-    layerId: 'dots-layer',
-    url: 'data/pop_dots_300_WGS.geojson'          // 🌍 STUDENTS: Path to your file
-  },
-  // Boundaries layer (municipal borders)
-  boundaries: {
-    sourceId: 'boundaries-src',
-    layerId: 'boundaries-layer',
-    url: 'data/dimoi_oria_WGS.geojson'            // 🌍 STUDENTS: Path to your file
-  }
-};
-
-// Variables to cache loaded data (so we don't reload it every time)
-let popdensData = null;      // Stores choropleth data once loaded
-let denscoverData = null;    // Stores dasymmetric data once loaded
-
-// Tracks which layers are currently visible on the map
-const enabledLayers = { 
-  popdens: false,
-  denscover: false,
-  poipop: false,
-  contours: false,
-  dots: false,
-  boundaries: false
-};
-
-// ============================================================
-// 3. COLOR SCHEMES
-// ============================================================
-// These arrays define the colors used for each classification method
-// The number of colors must match the number of classes + 1
-
-/* 🌍 STUDENTS - MODIFY CHOROPLETH COLOR SCHEMES (for POPDENS layer) */
-// 🗺️ Change these hex colors to customize your choropleth appearance
-// IMPORTANT: If you change these colors, you must also update the legend colors
-// The legend is generated dynamically and will automatically use these colors
-const colorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],           // 3 classes = 4 colors (lightest to darkest)
-  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],  // Default
-  6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
-  7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
-};
-
-/* 🌍 STUDENTS - MODIFY DASYMMETRIC MAP COLOR SCHEMES (for DENS_COVER layer) */
-// 🗺️ Change these hex colors (red scheme to match choropleth)
-// IMPORTANT: If you change these colors, you must also update the legend colors
-// The legend is generated dynamically and will automatically use these colors
-const denscoverColorSchemes = {
-  3: ['#ffcccc', '#ff6666', '#990000'],
-  4: ['#ffcccc', '#ff9999', '#cc0000', '#990000'],
-  5: ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000'],  // Default
-  6: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#cc0000', '#990000'],
-  7: ['#ffcccc', '#ff9999', '#ff6666', '#ff3333', '#ff0000', '#cc0000', '#990000']
-};
-
-/* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR POPDENS */
-// These break values define the class boundaries for custom classification
-// IMPORTANT: The number of colors must equal number of breaks + 1
-// Example: 5 breaks = 6 colors (one for each range: <break1, break1-break2, ..., >break5)
-// 
-// To change custom breaks:
-// 1. Modify the values in customBreaks array below
-// 2. Modify the colors in customColors array below (must have one more color than breaks)
-// 3. The legend will automatically update with your new breaks and colors
-const customBreaks = [30, 75, 150, 300, 600];
-const customColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000', '#660000'];
-
-/* 🌍 STUDENTS - DEFINE YOUR CUSTOM INTERVAL BREAKS FOR DENS_COVER */
-// These break values define the class boundaries for custom classification in dasymmetric map
-// IMPORTANT: The number of colors must equal number of breaks + 1
-// Example: 5 breaks = 6 colors (one for each range: <break1, break1-break2, ..., >break5)
-// 
-// To change custom breaks:
-// 1. Modify the values in denscoverCustomBreaks array below
-// 2. Modify the colors in denscoverCustomColors array below (must have one more color than breaks)
-// 3. The legend will automatically update with your new breaks and colors
-const denscoverCustomBreaks = [500, 1500, 3500, 6000, 8500];
-const denscoverCustomColors = ['#ffcccc', '#ff9999', '#ff6666', '#cc0000', '#990000', '#660000'];
-
-// ============================================================
-// 4. CLASSIFICATION FUNCTIONS
-// ============================================================
-// These functions calculate class breaks for choropleth maps
-
-/**
- * equalIntervalBreaks()
- * Divides the data range into equal-sized intervals
- * 
- * 📚 BACKGROUND:
- * Equal interval classification divides the range of values into equal-sized bins.
- * For example, if values range from 0-100 and you want 5 classes, each class
- * will span 20 units (0-20, 20-40, 40-60, 60-80, 80-100).
- * 
- * PROS: Easy to understand, consistent intervals
- * CONS: May result in classes with very few or no features
- * 
- * @param {Array} sorted - Array of sorted numeric values
- * @param {number} n - Number of classes to create
- * @returns {Array} Array of break points
- */
-function equalIntervalBreaks(sorted, n) {
-  const min = sorted[0];
-  const max = sorted[sorted.length-1];
-  if (min === max) return [max];
-  const step = (max - min) / n;
-  const breaks = [];
-  for (let i=1; i<n; i++) {
-    breaks.push(min + step*i);
-  }
-  return breaks.map(b => Number(b.toFixed(2)));
-}
-
-/**
- * quantileBreaks()
- * Divides features into classes with equal numbers of features
- * 
- * 📚 BACKGROUND:
- * Quantile classification ensures each class contains approximately
- * the same number of features. If you have 100 municipalities and
- * want 5 classes, each class will contain about 20 municipalities.
- * 
- * PROS: Good for evenly distributed data, each class is well-represented
- * CONS: Can place very different values in the same class
- * 
- * @param {Array} sorted - Array of sorted numeric values
- * @param {number} n - Number of classes to create
- * @returns {Array} Array of break points
- */
-function quantileBreaks(sorted, n) {
-  const breaks = [];
-  for (let i=1; i<n; i++){
-    const idx = Math.floor((sorted.length * i)/n);
-    breaks.push(sorted[Math.min(idx, sorted.length-1)]);
-  }
-  return breaks.map(b => Number(b.toFixed(2)));
-}
-
-/**
- * jenksBreaks()
- * Natural breaks (Jenks) - minimizes within-class variance
- * 
- * 📚 BACKGROUND:
- * Jenks natural breaks algorithm identifies "natural" groupings in data
- * by minimizing variance within classes and maximizing variance between classes.
- * This often produces the most visually meaningful classification.
- * 
- * PROS: Identifies natural clusters in data, statistically optimal
- * CONS: More computationally intensive, not intuitive to explain
- * 
- * @param {Array} sorted - Array of sorted numeric values
- * @param {number} numClasses - Number of classes to create
- * @returns {Array} Array of break points
- */
-function jenksBreaks(sorted, numClasses) {
-  const n = sorted.length;
-  const mat1 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
-  const mat2 = Array.from({length: n+1}, () => Array(numClasses+1).fill(0));
-
-  for (let i=1; i<=numClasses; i++) {
-    mat1[1][i] = 1;
-    mat2[1][i] = 0;
-    for (let j=2; j<=n; j++) {
-      mat2[j][i] = Infinity;
-    }
-  }
-
-  for (let l=2; l<=n; l++) {
-    let s1=0, s2=0, w=0;
-    for (let m=1; m<=l; m++) {
-      const i3 = l - m + 1;
-      const val = sorted[i3 - 1];
-      s2 += val*val;
-      s1 += val;
-      w++;
-      const v = s2 - (s1*s1)/w;
-      const i4 = i3 - 1;
-      if (i4 !== 0) {
-        for (let j=2; j<=numClasses; j++){
-          if (mat2[l][j] >= (v + mat2[i4][j-1])) {
-            mat1[l][j] = i3;
-            mat2[l][j] = v + mat2[i4][j-1];
-          }
+  // ============================================================
+  // 4. DATA LOADING FUNCTIONS
+  // ============================================================
+  // These functions load and process the GeoJSON data files
+  
+  /**
+   * loadData()
+   * Main function that loads BOTH the population points and boundary polygons
+   * 
+   * Process:
+   * 1. Fetch the population points GeoJSON file from DATA_PATH
+   * 2. Fetch the boundary polygons GeoJSON file from BOUNDARIES_PATH
+   * 3. Parse both JSON files
+   * 4. Sort population features by size (largest first) for proper rendering order
+   * 5. Calculate min/max population values
+   * 6. Add the boundary polygons to the map (underneath)
+   * 7. Add the circles to the map (on top)
+   * 8. Display the first year
+   * 9. Generate the legend
+   * 
+   * This function is called automatically when the map finishes loading
+   */
+  function loadData() {
+    console.log('Loading population data from:', DATA_PATH);
+    console.log('Loading boundaries data from:', BOUNDARIES_PATH);
+    
+    // Use Promise.all to load BOTH files simultaneously
+    // This is faster than loading them one after another
+    Promise.all([
+      // Load population points
+      fetch(DATA_PATH).then(response => {
+        if (!response.ok) {
+          throw new Error('Could not load population data file. Check that the path is correct.');
         }
-      }
-    }
-    mat1[l][1] = 1;
-    mat2[l][1] = mat2[l-1][1] + (sorted[l-1]-sorted[0])*(sorted[l-1]-sorted[0]);
-  }
-
-  const breaks = [];
-  let k = n;
-  for (let j = numClasses; j >= 2; j--) {
-    const id = mat1[k][j] - 1;
-    breaks.push(sorted[id]);
-    k = mat1[k][j] - 1;
-  }
-  return breaks.reverse().map(b => Number(b.toFixed(2)));
-}
-
-/**
- * calculateBreaks()
- * Main function that calls the appropriate classification method
- * 
- * @param {Array} values - Array of values to classify
- * @param {number} numClasses - Number of classes
- * @param {string} method - Classification method ('equal', 'quantile', 'natural', 'custom')
- * @param {boolean} isCustom - Whether using custom breaks
- * @param {Array} customBreaksArray - Array of custom break values
- * @returns {Array} Array of break points
- */
-function calculateBreaks(values, numClasses, method, isCustom, customBreaksArray) {
-  const sorted = values.filter(v => v != null && !isNaN(v)).sort((a,b)=>a-b);
-  if (sorted.length === 0) return [];
-  if (method === 'equal') return equalIntervalBreaks(sorted, numClasses);
-  if (method === 'quantile') return quantileBreaks(sorted, numClasses);
-  if (method === 'natural') return jenksBreaks(sorted, numClasses);
-  if (method === 'custom') return customBreaksArray;
-  return equalIntervalBreaks(sorted, numClasses);
-}
-
-/**
- * createStepExpression()
- * Creates a MapLibre expression for coloring features based on class breaks
- * 
- * 📚 BACKGROUND:
- * MapLibre uses expressions (array syntax) to define dynamic styling.
- * A 'step' expression acts like a lookup table: "if value < break1, use color1;
- * if value < break2, use color2; etc."
- * 
- * @param {Array} breaks - Array of break values
- * @param {Array} colors - Array of colors (length = breaks.length + 1)
- * @param {string} field - Field name to read values from
- * @returns {Array} MapLibre step expression
- */
-function createStepExpression(breaks, colors, field) {
-  const expr = ['step', ['get', field], colors[0]];
-  for (let i=0; i<breaks.length; i++){
-    expr.push(breaks[i]);
-    expr.push(colors[i+1] || colors[colors.length-1]);
-  }
-  return expr;
-}
-
-/**
- * ensureSource()
- * Adds or updates a GeoJSON data source on the map
- * 
- * @param {string} id - Source ID
- * @param {string|object} urlOrGeojson - URL to fetch or GeoJSON object
- */
-function ensureSource(id, urlOrGeojson) {
-  if (!map.getSource(id)) {
-    map.addSource(id, { type: 'geojson', data: urlOrGeojson });
-  } else {
-    if (typeof urlOrGeojson === 'object') {
-      map.getSource(id).setData(urlOrGeojson);
-    }
-  }
-}
-
-// ============================================================
-// 5. LAYER LOADING FUNCTIONS
-// ============================================================
-// These functions load and display each visualization layer
-
-/**
- * applyPopDensClassification()
- * Applies the selected classification method to the choropleth layer
- * 
- * Process:
- * 1. Read user's selected classification method and number of classes
- * 2. Calculate appropriate breaks using the selected method
- * 3. Create color expression for MapLibre
- * 4. Add or update the layer on the map
- * 5. Update the legend to show the new classes
- */
-function applyPopDensClassification() {
-  if (!popdensData) {
-    console.warn('No popdensData cached.');
-    return;
-  }
-  
-  const method = document.getElementById('classificationMethod').value;
-  const nclasses = parseInt(document.getElementById('numClasses').value,10);
-  
-  let colors, breaks;
-  
-  if (method === 'custom') {
-    breaks = customBreaks;
-    colors = customColors;
-  } else {
-    colors = colorSchemes[nclasses] || colorSchemes[5];
-    const values = popdensData.features.map(f => parseFloat(f.properties[layerDefinitions.popdens.dataField]));
-    breaks = calculateBreaks(values, nclasses, method, false, null);
-  }
-
-  const expr = createStepExpression(breaks, colors, layerDefinitions.popdens.dataField);
-  ensureSource(layerDefinitions.popdens.sourceId, popdensData);
-
-  if (map.getLayer(layerDefinitions.popdens.layerId)) {
-    map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-color', expr);
-  } else {
-    map.addLayer({
-      id: layerDefinitions.popdens.layerId,
-      type: 'fill',
-      source: layerDefinitions.popdens.sourceId,
-      paint: {
-        'fill-color': expr,
-        'fill-opacity': parseInt(document.getElementById('popdensOpacity').value,10)/100
-      }
-    });
-  }
-
-  layerDefinitions.popdens.breaks = breaks;
-  layerDefinitions.popdens.colors = colors;
-  enabledLayers.popdens = true;
-  document.getElementById('popdensControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * loadPopDensLayer()
- * Fetches the choropleth GeoJSON file and applies classification
- */
-function loadPopDensLayer() {
-  fetch(layerDefinitions.popdens.url)
-    .then(r => r.json())
-    .then(gj => {
-      popdensData = gj;
-      applyPopDensClassification();
+        return response.json();
+      }),
+      
+      // Load boundary polygons
+      fetch(BOUNDARIES_PATH).then(response => {
+        if (!response.ok) {
+          throw new Error('Could not load boundaries data file. Check that the path is correct.');
+        }
+        return response.json();
+      })
+    ])
+    .then(([populationData, boundaryData]) => {
+      // Both files loaded successfully!
+      console.log('Population data loaded successfully. Features:', populationData.features.length);
+      console.log('Boundaries data loaded successfully. Features:', boundaryData.features.length);
+      
+      // ============================================================
+      // CRITICAL: SORT FEATURES BY POPULATION SIZE
+      // ============================================================
+      // 🎨 RENDERING ORDER CONTROL
+      // 
+      // MapLibre GL renders circle features in the order they appear in the GeoJSON.
+      // Without sorting, smaller circles might be drawn first and hidden behind larger ones.
+      // 
+      // Solution: Sort features by population (LARGEST FIRST)
+      // - Large circles drawn first → appear in back
+      // - Small circles drawn last → appear in front (on top)
+      // 
+      // This ensures smaller municipalities are always visible even when overlapping
+      // with larger ones, improving map readability.
+      //
+      // We use the FIRST year column to determine sorting order (assumes population
+      // rankings don't change dramatically across years)
+      // ============================================================
+      
+      populationData.features.sort((a, b) => {
+        const valA = parseFloat(a.properties[YEAR_COLUMNS[0]]) || 0;
+        const valB = parseFloat(b.properties[YEAR_COLUMNS[0]]) || 0;
+        return valB - valA;  // Descending order: largest first, smallest last
+      });
+      
+      // Debug: Log first and last features to verify sorting
+      console.log('Sorted features by population (largest first) for proper rendering order');
+      console.log('First feature (largest):', populationData.features[0].properties[YEAR_COLUMNS[0]]);
+      console.log('Last feature (smallest):', populationData.features[populationData.features.length - 1].properties[YEAR_COLUMNS[0]]);
+      
+      // Store the data in our global variables
+      geojsonData = populationData;
+      boundariesData = boundaryData;
+      
+      // Calculate the range of values across all years
+      calculatePopulationRange();
+      
+      // IMPORTANT: Add layers in correct order (bottom to top)
+      // 1. First add boundaries (will appear underneath)
+      // 2. Then add population circles (will appear on top)
+      addBoundariesLayer();
+      addPopulationLayer();
+      
+      // Show the first year (index 0)
+      updateVisibleYear(0);
+      
+      // Create the legend
+      updateLegend();
+      
+      // Log info to console for debugging
+      console.log('Population range:', minPopulation, 'to', maxPopulation);
     })
-    .catch(err => {
-      console.error('Failed to load POPDENS:', err);
-      alert('Error loading POPDENS geojson.');
-    });
-}
-
-/**
- * applyDensCoverClassification()
- * Applies classification to the dasymmetric layer
- * 
- * Similar to applyPopDensClassification but for the dasymmetric map
- */
-function applyDensCoverClassification() {
-  if (!denscoverData) {
-    console.warn('No denscoverData cached.');
-    return;
-  }
-  
-  const method = document.getElementById('denscoverClassificationMethod').value;
-  const nclasses = parseInt(document.getElementById('denscoverNumClasses').value,10);
-  
-  let colors, breaks;
-  
-  if (method === 'custom') {
-    breaks = denscoverCustomBreaks;
-    colors = denscoverCustomColors;
-  } else {
-    colors = denscoverColorSchemes[nclasses] || denscoverColorSchemes[5];
-    const values = denscoverData.features.map(f => parseFloat(f.properties[layerDefinitions.denscover.dataField]));
-    breaks = calculateBreaks(values, nclasses, method, false, null);
-  }
-
-  const expr = createStepExpression(breaks, colors, layerDefinitions.denscover.dataField);
-  ensureSource(layerDefinitions.denscover.sourceId, denscoverData);
-
-  if (map.getLayer(layerDefinitions.denscover.layerId)) {
-    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-color', expr);
-  } else {
-    map.addLayer({
-      id: layerDefinitions.denscover.layerId,
-      type: 'fill',
-      source: layerDefinitions.denscover.sourceId,
-      paint: {
-        'fill-color': expr,
-        'fill-opacity': parseInt(document.getElementById('denscoverOpacity').value,10)/100
-      }
+    .catch(error => {
+      // Something went wrong - file not found, invalid JSON, etc.
+      console.error('Error loading data:', error);
+      alert('Error loading data!\n\n' + error.message + '\n\nCheck:\n- File paths are correct\n- Files exist\n- Files are valid GeoJSON');
     });
   }
 
-  layerDefinitions.denscover.breaks = breaks;
-  layerDefinitions.denscover.colors = colors;
-  enabledLayers.denscover = true;
-  document.getElementById('denscoverControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * loadDensCoverLayer()
- * Fetches the dasymmetric GeoJSON file and applies classification
- */
-function loadDensCoverLayer() {
-  fetch(layerDefinitions.denscover.url)
-    .then(r => r.json())
-    .then(gj => {
-      denscoverData = gj;
-      applyDensCoverClassification();
-    })
-    .catch(err => {
-      console.error('Failed to load DENS_COVER:', err);
-      alert('Error loading DENS_COVER geojson.');
-    });
-}
-
-/**
- * loadPoipopLayer()
- * Loads the proportional symbols (circles) layer
- * 
- * Uses Flannery scaling (exponent 0.57) for perceptually accurate circles.
- * See Flannery (1971): "The Relative Effectiveness of Some Common 
- * Graduated Point Symbols in the Presentation of Quantitative Data"
- */
-function loadPoipopLayer() {
-  const def = layerDefinitions.poipop;
-  ensureSource(def.sourceId, def.url);
-
-  const maxR = parseInt(document.getElementById('maxRadius').value,10);
-  const vL = def.maxValueApprox || 100000;
-  const radiusExpr = ['*', ['^', ['/', ['get', def.dataField], vL], 0.57], maxR];
-
-  if (!map.getLayer(def.layerId)) {
-    map.addLayer({
-      id: def.layerId,
-      type: 'circle',
-      source: def.sourceId,
-      paint: {
-        'circle-color': 'rgba(255,0,0,0.25)',  // 🗺️ STUDENTS: Change circle fill color
-        'circle-radius': radiusExpr,
-        'circle-opacity': parseInt(document.getElementById('poipopOpacity').value,10)/100,
-        'circle-stroke-color': 'red',          // 🗺️ STUDENTS: Change circle outline color
-        'circle-stroke-width': 0.8
-      }
-    });
-  } else {
-    map.setPaintProperty(def.layerId, 'circle-radius', radiusExpr);
-    map.setPaintProperty(def.layerId, 'circle-opacity', parseInt(document.getElementById('poipopOpacity').value,10)/100);
-  }
-
-  enabledLayers.poipop = true;
-  document.getElementById('poipopControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * updatePoipopRadius()
- * Updates circle sizes when user adjusts the radius slider
- */
-function updatePoipopRadius() {
-  const def = layerDefinitions.poipop;
-  if (!map.getLayer(def.layerId)) return;
-  
-  const maxR = parseInt(document.getElementById('maxRadius').value,10);
-  const vL = def.maxValueApprox || 100000;
-  const radiusExpr = ['*', ['^', ['/', ['get', def.dataField], vL], 0.57], maxR];
-  
-  map.setPaintProperty(def.layerId, 'circle-radius', radiusExpr);
-  updateLegend();
-}
-
-/**
- * loadContoursLayer()
- * Loads the population potential contour lines (isopleths)
- * 
- * Contours show areas of equal population potential, useful for
- * identifying population centers and their zones of influence.
- */
-function loadContoursLayer() {
-  const def = layerDefinitions.contours;
-  ensureSource(def.sourceId, def.url);
-
-  const widthExpr = ['case', ['==', ['get', 'ID'], 1], 3, 1.2];
-  const color = '#8B0000';  // 🗺️ STUDENTS: Change contour line color
-
-  if (!map.getLayer(def.layerId)) {
-    map.addLayer({
-      id: def.layerId,
-      type: 'line',
-      source: def.sourceId,
-      paint: {
-        'line-color': color,
-        'line-width': widthExpr,
-        'line-opacity': parseInt(document.getElementById('contoursOpacity').value,10)/100
-      }
-    });
-  } else {
-    map.setPaintProperty(def.layerId, 'line-width', widthExpr);
-    map.setPaintProperty(def.layerId, 'line-opacity', parseInt(document.getElementById('contoursOpacity').value,10)/100);
-  }
-
-  enabledLayers.contours = true;
-  document.getElementById('contoursControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * loadDotsLayer()
- * Loads the dot density map layer
- * 
- * 📚 BACKGROUND:
- * Dot density maps use one dot to represent a fixed number of people
- * (e.g., 1 dot = 500 people). The visual density of dots shows
- * population concentration patterns.
- */
-function loadDotsLayer() {
-  const def = layerDefinitions.dots;
-  ensureSource(def.sourceId, def.url);
-
-  const dotSize = parseFloat(document.getElementById('dotSize').value);
-  const opacity = parseInt(document.getElementById('dotsOpacity').value,10)/100;
-
-  if (!map.getLayer(def.layerId)) {
-    map.addLayer({
-      id: def.layerId,
-      type: 'circle',
-      source: def.sourceId,
-      paint: {
-        'circle-color': '#ff0000',  // 🗺️ STUDENTS: Change dot color (red)
-        'circle-radius': dotSize,
-        'circle-opacity': opacity
-      }
-    });
-  } else {
-    map.setPaintProperty(def.layerId, 'circle-radius', dotSize);
-    map.setPaintProperty(def.layerId, 'circle-opacity', opacity);
-  }
-
-  enabledLayers.dots = true;
-  document.getElementById('dotsControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * loadBoundariesLayer()
- * Loads the municipal boundary lines
- * 
- * Boundaries provide geographic context by showing the official
- * administrative divisions.
- */
-function loadBoundariesLayer() {
-  const def = layerDefinitions.boundaries;
-  ensureSource(def.sourceId, def.url);
-
-  if (!map.getLayer(def.layerId)) {
-    map.addLayer({
-      id: def.layerId,
-      type: 'line',
-      source: def.sourceId,
-      paint: {
-        'line-color': '#bbbbbb',  // 🗺️ STUDENTS: Change boundary line color
-        'line-width': 1,
-        'line-opacity': parseInt(document.getElementById('boundariesOpacity').value,10)/100
-      }
-    });
-  } else {
-    map.setPaintProperty(def.layerId, 'line-opacity', parseInt(document.getElementById('boundariesOpacity').value,10)/100);
-  }
-
-  enabledLayers.boundaries = true;
-  document.getElementById('boundariesControls').style.display = 'block';
-  updateLegend();
-}
-
-/**
- * removeLayer()
- * Removes a layer from the map when user unchecks it
- * 
- * @param {string} name - Name of the layer to remove
- */
-function removeLayer(name) {
-  const def = layerDefinitions[name];
-  if (map.getLayer(def.layerId)) map.removeLayer(def.layerId);
-  if (map.getSource(def.sourceId)) map.removeSource(def.sourceId);
-  enabledLayers[name] = false;
-  const c = document.getElementById(name + 'Controls');
-  if (c) c.style.display = 'none';
-  updateLegend();
-}
-
-// ============================================================
-// 6. LEGEND GENERATION
-// ============================================================
-// Dynamically creates legend based on which layers are active
-
-/* 🌍 STUDENTS - MODIFY LEGEND TITLE AND TEXT */
-function updateLegend() {
-  const legend = document.getElementById('legend');
-  let html = '';
-
-  /* 🌍 STUDENTS: Change the text below to customize your map title and credits */
-  html += `
-    <div class="legend-header">
-      <div class="legend-map-title">THESSALIA POPULATION</div>
-      <div class="legend-author">
-        <strong>Data source:</strong> Hellenic Statistical Authority - Population data 2021<br>
-        <strong>Produced by:</strong> Loukas Katikas<br>
-        <strong>Student ID:</strong> XXX<br>
-        National Technical University of Athens (NTUA)<br>
-        School of Rural, Surveying & Geoinformatics Engineering<br>
-        Cartography Laboratory<br>
-        Thematic Cartography, Academic Year 2025-2026
-      </div>
-    </div>
-  `;
-
-  // Choropleth map legend
-  if (enabledLayers.popdens && layerDefinitions.popdens.breaks) {
-    const breaks = layerDefinitions.popdens.breaks;
-    const colors = layerDefinitions.popdens.colors;
+  /**
+   * calculatePopulationRange()
+   * Finds the minimum and maximum population values across ALL years
+   * 
+   * Why this is important:
+   * To make the animation meaningful, we need consistent circle sizing.
+   * If we rescale for each year separately, a city might appear to grow
+   * when it actually shrunk, just because it's now the largest in that year.
+   * 
+   * Process:
+   * 1. Loop through every feature (municipality/point)
+   * 2. For each feature, check all year columns
+   * 3. Collect all valid population values
+   * 4. Find the overall minimum and maximum
+   */
+  function calculatePopulationRange() {
+    let allValues = [];  // Array to collect ALL population values from ALL years
     
-    // 🌍 STUDENTS: Change "Choropleth map (people / km²)" to your preferred legend title
-    html += `<div class="legend-title">Choropleth map (people / km²)</div>`;
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
+    // Loop through each feature (each point/municipality in the GeoJSON)
+    geojsonData.features.forEach(feature => {
+      // For this feature, check all year columns
+      YEAR_COLUMNS.forEach(column => {
+        const value = feature.properties[column];  // Get the population value
+        
+        // Only include valid numbers (ignore null, undefined, NaN)
+        if (value != null && !isNaN(value) && value >= 0) {
+          allValues.push(value);
+        }
+      });
+    });
     
-    for (let i=0; i<breaks.length-1; i++){
-      html += `<div class="legend-row"><div class="legend-color" style="background:${colors[i+1]}"></div><div>${breaks[i]} – ${breaks[i+1]}</div></div>`;
+    // Find the minimum and maximum across all collected values
+    // Math.min(...array) finds smallest, Math.max(...array) finds largest
+    minPopulation = Math.min(...allValues);
+    maxPopulation = Math.max(...allValues);
+    
+    console.log('Calculated range:', minPopulation, '-', maxPopulation);
+  }
+
+  // ============================================================
+  // 5. BOUNDARY LAYER ADDITION
+  // ============================================================
+  // These functions add municipality boundary polygons to the map
+  
+  /**
+   * addBoundariesLayer()
+   * Adds the boundary polygons as an outline layer beneath the population circles
+   * 
+   * 📚 BACKGROUND: Why add boundaries?
+   * 
+   * Boundaries provide geographic context by showing the actual shapes and
+   * extents of municipalities or administrative areas. Without boundaries,
+   * users only see circles floating in space. With boundaries, users can:
+   * - Understand the geographic extent of each municipality
+   * - See where municipality borders meet
+   * - Better relate the data to familiar geographic areas
+   * 
+   * LAYER ORDERING:
+   * MapLibre draws layers in the order they're added, so:
+   * 1. Basemap tiles (bottom)
+   * 2. Boundary polygons (we add this first)
+   * 3. Population circles (we add this second, so it appears on top)
+   * 
+   * 🗺️ STUDENTS: You can customize the boundary appearance by modifying
+   * the 'paint' properties in this function:
+   * - line-color: Color of the boundary lines
+   * - line-width: Thickness of the boundary lines
+   * - line-opacity: Transparency of the boundary lines
+   * 
+   * Process:
+   * 1. Remove any existing boundary layer (important when changing basemaps)
+   * 2. Add boundaries GeoJSON as a data source
+   * 3. Add a line layer that draws the polygon outlines
+   * 4. Style the lines to match your map's aesthetic
+   */
+  function addBoundariesLayer() {
+    const sourceId = 'boundaries-source';  // Internal ID for data source
+    const layerId = 'boundaries-layer';    // Internal ID for visible layer
+    
+    // Remove existing layer and source if they exist
+    // This is necessary when switching basemaps
+    if (map.getLayer(layerId)) {
+      map.removeLayer(layerId);
+      console.log('Removed existing boundaries layer');
+    }
+    if (map.getSource(sourceId)) {
+      map.removeSource(sourceId);
+      console.log('Removed existing boundaries source');
     }
     
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[colors.length-1]}"></div><div>&gt; ${breaks[breaks.length-1]}</div></div>`;
-    html += '<hr>';
-  }
-
-  // Dasymmetric map legend
-  if (enabledLayers.denscover && layerDefinitions.denscover.breaks) {
-    const breaks = layerDefinitions.denscover.breaks;
-    const colors = layerDefinitions.denscover.colors;
+    // Add the boundaries GeoJSON data as a source
+    // A source provides data but doesn't display anything yet
+    map.addSource(sourceId, { 
+      type: 'geojson',        // Tells MapLibre this is GeoJSON format
+      data: boundariesData    // Our loaded boundary polygons
+    });
     
-    // 🌍 STUDENTS: Change "Dasymmetric map (people / km² by land cover zone)" to your preferred legend title
-    html += `<div class="legend-title">Dasymmetric map (people / km² by land cover zone)</div>`;
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[0]}"></div><div>&lt; ${breaks[0]}</div></div>`;
-    
-    for (let i=0; i<breaks.length-1; i++){
-      html += `<div class="legend-row"><div class="legend-color" style="background:${colors[i+1]}"></div><div>${breaks[i]} – ${breaks[i+1]}</div></div>`;
-    }
-    
-    html += `<div class="legend-row"><div class="legend-color" style="background:${colors[colors.length-1]}"></div><div>&gt; ${breaks[breaks.length-1]}</div></div>`;
-    html += '<hr>';
-  }
-
-  /* 🌍 STUDENTS - MODIFY LEGEND CIRCLE SIZES */
-  // Proportional symbols legend
-  if (enabledLayers.poipop) {
-    const maxR = parseInt(document.getElementById('maxRadius').value,10);
-    const maxVal = layerDefinitions.poipop.maxValueApprox || 100000;
-    
-    // 🌍 STUDENTS: Change these values to match your data ranges
-    const vSmall = 1000;
-    const vMed = 10000;
-    const vMedLarge = 50000;
-    const vLarge = 100000;
-    
-    const r1 = Math.max(2, Math.pow(vSmall / maxVal, 0.57) * maxR);
-    const r2 = Math.max(2, Math.pow(vMed / maxVal, 0.57) * maxR);
-    const r3 = Math.max(2, Math.pow(vMedLarge / maxVal, 0.57) * maxR);
-    const r4 = Math.max(2, Math.pow(vLarge / maxVal, 0.57) * maxR);
-    
-    const svgHeight = Math.round(Math.max(r4*2 + 20, 140));
-    const cx = 110;
-    const baseY = svgHeight - 10;
-
-    // 🌍 STUDENTS: Change "Population (indicative values)" to your preferred legend title
-    html += `<div class="legend-title">Population (indicative values)</div>`;
-    html += `<div style="text-align:center"><svg width="240" height="${svgHeight}">`;
-    
-    html += `<circle cx="${cx}" cy="${baseY - r1}" r="${r1}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
-    html += `<text x="${cx}" y="${baseY - (r1*2) - 4}" text-anchor="middle" font-size="11">1,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r2}" r="${r2}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
-    html += `<text x="${cx}" y="${baseY - (r2*2) - 4}" text-anchor="middle" font-size="11">10,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r3}" r="${r3}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
-    html += `<text x="${cx}" y="${baseY - (r3*2) - 4}" text-anchor="middle" font-size="11">50,000</text>`;
-    html += `<circle cx="${cx}" cy="${baseY - r4}" r="${r4}" fill="none" stroke="red" stroke-width="1.5"></circle>`;
-    html += `<text x="${cx}" y="${baseY - (r4*2) - 4}" text-anchor="middle" font-size="11">100,000</text>`;
-    // 🗺️ STUDENTS: Change circle outline color by modifying stroke="red" above
-    // Note: fill="none" means no fill, only red outline is shown
-    
-    html += `</svg></div><hr>`;
-  }
-
-  // Contours legend
-  if (enabledLayers.contours) {
-    // 🌍 STUDENTS: Change "Population dynamic (2M & 4M)" to your preferred legend title
-    html += `<div class="legend-title">Population dynamic (2M & 4M)</div>`;
-    html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="3"/></svg><div>Primary (Id = 1)</div></div>`;
-    html += `<div class="legend-row"><svg class="legend-line"><line x1="0" y1="7" x2="40" y2="7" stroke="#8B0000" stroke-width="1.2"/></svg><div>Secondary (Id = 2)</div></div>`;
-    // 🗺️ STUDENTS: Change stroke="#8B0000" to modify contour line color in legend
-    html += '<hr>';
-  }
-
-  // Dot map legend
-  if (enabledLayers.dots) {
-    // 🌍 STUDENTS: Change "Population density" to your preferred legend title
-    html += `<div class="legend-title">Population density</div>`;
-    html += `<div class="legend-row"><svg width="30" height="24"><circle cx="15" cy="12" r="${parseFloat(document.getElementById('dotSize').value)}" fill="#ff0000"/></svg><div>1 dot = 500 people</div></div>`;
-    // 🗺️ STUDENTS: Change fill="#ff0000" for dot color and "500 people" to match your data
-    html += '<hr>';
-  }
-
-  // Boundaries legend
-  if (enabledLayers.boundaries) {
-    html += `<div class="legend-row"><svg width="40" height="18"><line x1="0" y1="9" x2="40" y2="9" stroke="#bbbbbb" stroke-width="1"/></svg> <div> Municipal boundaries</div></div>`;
-    // 🗺️ STUDENTS: Change stroke="#bbbbbb" for boundary line color in legend
-  }
-
-  // Add resize hint at the bottom of legend
-  if (html.length) {
-    html += `<div style="text-align: right; font-size: 10px; color: #999; margin-top: 10px;">💡 Drag corner to resize</div>`;
-  }
-
-  // Show or hide legend based on whether any layers are active
-  if (html.length) {
-    legend.innerHTML = html;
-    legend.style.display = 'block';
-  } else {
-    legend.style.display = 'none';
-  }
-}
-
-// ============================================================
-// 7. EVENT LISTENERS
-// ============================================================
-// These functions respond to user interactions with the interface
-
-/**
- * showHideControls()
- * Shows/hides layer control panels based on checkbox state
- */
-function showHideControls() {
-  Object.keys(enabledLayers).forEach(k => {
-    const checkbox = document.getElementById(k + 'Toggle');
-    const controls = document.getElementById(k + 'Controls');
-    if (!controls) return;
-    controls.style.display = checkbox.checked ? 'block' : 'none';
-  });
-}
-
-// Choropleth layer toggle
-document.getElementById('popdensToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadPopDensLayer(); } else { removeLayer('popdens'); }
-});
-
-// Choropleth classification method selector
-document.getElementById('classificationMethod').addEventListener('change', () => {
-  const method = document.getElementById('classificationMethod').value;
-  const numClassesLabel = document.getElementById('numClassesLabel');
-  const numClassesSelect = document.getElementById('numClasses');
-  
-  // Disable number of classes selector when using custom breaks
-  if (method === 'custom') {
-    numClassesSelect.disabled = true;
-    numClassesLabel.style.opacity = '0.5';
-  } else {
-    numClassesSelect.disabled = false;
-    numClassesLabel.style.opacity = '1';
-  }
-  
-  if (enabledLayers.popdens) applyPopDensClassification();
-});
-
-// Choropleth number of classes selector
-document.getElementById('numClasses').addEventListener('change', () => {
-  if (enabledLayers.popdens) applyPopDensClassification();
-});
-
-// Choropleth opacity slider
-document.getElementById('popdensOpacity').addEventListener('input', (e) => {
-  document.getElementById('popdensOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.popdens.layerId)) {
-    map.setPaintProperty(layerDefinitions.popdens.layerId, 'fill-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Dasymmetric layer toggle
-document.getElementById('denscoverToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadDensCoverLayer(); } else { removeLayer('denscover'); }
-});
-
-// Dasymmetric classification method selector
-document.getElementById('denscoverClassificationMethod').addEventListener('change', () => {
-  const method = document.getElementById('denscoverClassificationMethod').value;
-  const numClassesLabel = document.getElementById('denscoverNumClassesLabel');
-  const numClassesSelect = document.getElementById('denscoverNumClasses');
-  
-  if (method === 'custom') {
-    numClassesSelect.disabled = true;
-    numClassesLabel.style.opacity = '0.5';
-  } else {
-    numClassesSelect.disabled = false;
-    numClassesLabel.style.opacity = '1';
-  }
-  
-  if (enabledLayers.denscover) applyDensCoverClassification();
-});
-
-// Dasymmetric number of classes selector
-document.getElementById('denscoverNumClasses').addEventListener('change', () => {
-  if (enabledLayers.denscover) applyDensCoverClassification();
-});
-
-// Dasymmetric opacity slider
-document.getElementById('denscoverOpacity').addEventListener('input', (e) => {
-  document.getElementById('denscoverOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.denscover.layerId)) {
-    map.setPaintProperty(layerDefinitions.denscover.layerId, 'fill-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Proportional symbols layer toggle
-document.getElementById('poipopToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadPoipopLayer(); } else { removeLayer('poipop'); }
-});
-
-// Proportional symbols radius slider
-document.getElementById('maxRadius').addEventListener('input', (e) => {
-  document.getElementById('maxRadiusLabel').textContent = e.target.value;
-  updatePoipopRadius();
-});
-
-// Proportional symbols opacity slider
-document.getElementById('poipopOpacity').addEventListener('input', (e) => {
-  document.getElementById('poipopOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.poipop.layerId)) {
-    map.setPaintProperty(layerDefinitions.poipop.layerId, 'circle-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Contours layer toggle
-document.getElementById('contoursToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadContoursLayer(); } else { removeLayer('contours'); }
-});
-
-// Contours opacity slider
-document.getElementById('contoursOpacity').addEventListener('input', (e) => {
-  document.getElementById('contoursOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.contours.layerId)) {
-    map.setPaintProperty(layerDefinitions.contours.layerId, 'line-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Dot map layer toggle
-document.getElementById('dotsToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadDotsLayer(); } else { removeLayer('dots'); }
-});
-
-// Dot map size slider
-document.getElementById('dotSize').addEventListener('input', (e) => {
-  document.getElementById('dotSizeLabel').textContent = e.target.value;
-  if (map.getLayer(layerDefinitions.dots.layerId)) {
-    map.setPaintProperty(layerDefinitions.dots.layerId, 'circle-radius', parseFloat(e.target.value));
-  }
-});
-
-// Dot map opacity slider
-document.getElementById('dotsOpacity').addEventListener('input', (e) => {
-  document.getElementById('dotsOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.dots.layerId)) {
-    map.setPaintProperty(layerDefinitions.dots.layerId, 'circle-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Boundaries layer toggle
-document.getElementById('boundariesToggle').addEventListener('change', (e) => {
-  if (e.target.checked) { loadBoundariesLayer(); } else { removeLayer('boundaries'); }
-});
-
-// Boundaries opacity slider
-document.getElementById('boundariesOpacity').addEventListener('input', (e) => {
-  document.getElementById('boundariesOpacityLabel').textContent = e.target.value + '%';
-  if (map.getLayer(layerDefinitions.boundaries.layerId)) {
-    map.setPaintProperty(layerDefinitions.boundaries.layerId, 'line-opacity', parseInt(e.target.value,10)/100);
-  }
-});
-
-// Basemap switcher
-document.getElementById('basemapSelect').addEventListener('change', (e) => {
-  const style = e.target.value;
-  const enabledSnapshot = {...enabledLayers};
-  map.setStyle(style);
-  
-  map.once('styledata', () => {
-    for (const key in enabledSnapshot) {
-      if (enabledSnapshot[key]) {
-        if (key === 'popdens') {
-          if (popdensData) { applyPopDensClassification(); } else { loadPopDensLayer(); }
-        } else if (key === 'denscover') {
-          if (denscoverData) { applyDensCoverClassification(); } else { loadDensCoverLayer(); }
-        } else if (key === 'poipop') { loadPoipopLayer();
-        } else if (key === 'contours') { loadContoursLayer();
-        } else if (key === 'dots') { loadDotsLayer();
-        } else if (key === 'boundaries') { loadBoundariesLayer(); }
+    // Add a layer that displays the polygon outlines
+    // Type 'line' draws the boundaries of polygons as lines
+    map.addLayer({
+      id: layerId,              // Layer ID
+      type: 'line',             // Layer type: draws lines along polygon edges
+      source: sourceId,         // Which source to get data from
+      paint: {                  // Visual styling properties
+        // 🗺️ STUDENTS: CUSTOMIZE BOUNDARY APPEARANCE HERE
+        // 
+        // line-color: The color of the boundary lines
+        // Format: 'rgb(red, green, blue)' or 'rgba(red, green, blue, alpha)' or hex '#RRGGBB'
+        // Examples:
+        //   - White: 'rgb(255, 255, 255)' or '#FFFFFF'
+        //   - Black: 'rgb(0, 0, 0)' or '#000000'
+        //   - Gray: 'rgb(128, 128, 128)' or '#808080'
+        //   - Light Gray: 'rgb(200, 200, 200)' or '#C8C8C8'
+        //   - Blue: 'rgb(0, 100, 255)' or '#0064FF'
+        'line-color': 'rgb(200, 200, 200)',  // Light grey color
+        
+        // line-width: Thickness of the boundary lines in pixels
+        // Range: Typically 0.5 to 5
+        // Examples:
+        //   - Very thin: 0.5
+        //   - Thin: 1
+        //   - Medium: 2
+        //   - Thick: 3-5
+        'line-width': 1.5,                  // Medium thickness
+        
+        // line-opacity: Transparency of the boundary lines
+        // Range: 0.0 (invisible) to 1.0 (fully solid)
+        // Examples:
+        //   - Subtle: 0.3-0.5
+        //   - Normal: 0.6-0.8
+        //   - Strong: 0.9-1.0
+        'line-opacity': 0.6                 // Moderately visible
       }
+    });
+    
+    console.log('Added boundaries layer');
+  }
+
+  // ============================================================
+  // 6. FLANNERY SCALING & VISUALIZATION
+  // ============================================================
+  // These functions handle the mathematical calculations for circle sizes
+  // and display the circles on the map
+  
+  /**
+   * addPopulationLayer()
+   * Adds the circle layer to the map (on top of boundaries)
+   * 
+   * Process:
+   * 1. Remove any existing layer (important when changing basemaps)
+   * 2. Add GeoJSON as a data source
+   * 3. Add a circle layer that references this source
+   * 4. Apply Flannery scaling for circle sizes
+   */
+  function addPopulationLayer() {
+    const sourceId = 'population-source';  // Internal ID for data source
+    const layerId = 'population-layer';    // Internal ID for visible layer
+    
+    // Remove existing layer and source if they exist
+    // This is necessary when switching basemaps
+    if (map.getLayer(layerId)) {
+      map.removeLayer(layerId);
+      console.log('Removed existing layer');
+    }
+    if (map.getSource(sourceId)) {
+      map.removeSource(sourceId);
+      console.log('Removed existing source');
+    }
+    
+    // Add the GeoJSON data as a source
+    // A source provides data but doesn't display anything yet
+    map.addSource(sourceId, { 
+      type: 'geojson',      // Tells MapLibre this is GeoJSON format
+      data: geojsonData     // Our loaded data
+    });
+    
+    // Add a layer that displays circles at each point location
+    map.addLayer({
+      id: layerId,              // Layer ID
+      type: 'circle',           // Layer type: circles at point locations
+      source: sourceId,         // Which source to get data from
+      paint: {                  // Visual styling properties
+        // 🗺️ STUDENTS: Change circle color here if desired
+        // Format: 'rgba(red, green, blue, alpha)' where:
+        //   - red, green, blue: 0-255
+        //   - alpha: 0.0-1.0 (0=invisible, 1=solid)
+        // Examples:
+        //   - Blue: 'rgba(0, 0, 255, 1)'
+        //   - Green: 'rgba(0, 255, 0, 1)'
+        //   - Purple: 'rgba(128, 0, 128, 1)'
+        'circle-color': 'rgba(255, 0, 0, 1)',  // Red circles
+        
+        'circle-opacity': opacity,              // Transparency (controlled by slider)
+        
+        // Circle size calculated using Flannery scaling
+        'circle-radius': getFlanneryExpression(YEAR_COLUMNS[0])  // Start with first year
+      }
+    });
+    
+    console.log('Added population layer');
+  }
+
+  /**
+   * getFlanneryExpression()
+   * Creates a MapLibre expression for Flannery perceptual scaling
+   * 
+   * 📚 BACKGROUND: Why Flannery Scaling?
+   * 
+   * When humans look at circles of different sizes, they underestimate
+   * the size difference. For example, if one circle has 4x the area of
+   * another, it doesn't LOOK 4x larger - it looks more like 2-3x larger.
+   * 
+   * James Flannery researched this in 1971 and found that using a power
+   * of 0.57 (instead of 0.5 for true area scaling) makes circles appear
+   * more proportional to their data values.
+   * 
+   * FORMULA: radius = (value / maxValue) ^ 0.57 × maxRadius
+   * 
+   * Where:
+   * - value = population for this feature
+   * - maxValue = largest population across all years
+   * - 0.57 = Flannery exponent for perceptual correction
+   * - maxRadius = maximum circle size in pixels (set by slider)
+   * 
+   * 🗺️ STUDENTS: You generally don't need to modify this function
+   * unless you want to experiment with different scaling methods
+   * 
+   * @param {string} columnName - Which column to get population from
+   * @returns {Array} MapLibre expression for dynamic radius calculation
+   */
+  function getFlanneryExpression(columnName) {
+    // MapLibre expressions use array syntax
+    // This creates a mathematical formula that MapLibre can execute
+    return [
+      'let',                                    // Define variables
+      'value', ['get', columnName],            // value = get population from this column
+      'maxValue', maxPopulation,               // maxValue = our calculated maximum
+      [
+        '*',                                    // Multiply (operator comes first in MapLibre)
+        [
+          '^',                                  // Power/exponent operator
+          ['/', ['var', 'value'], ['var', 'maxValue']],  // (value / maxValue)
+          0.57                                  // ^ 0.57 (Flannery exponent)
+        ],
+        maxRadius                               // × maxRadius
+      ]
+    ];
+  }
+
+  /**
+   * updateVisibleYear()
+   * Updates the map to display a specific year's data
+   * 
+   * This function is called when:
+   * - User moves the year slider
+   * - Animation advances to next frame
+   * - User changes the max radius or opacity
+   * 
+   * @param {number} index - Which year to display (0 = first, 1 = second, etc.)
+   */
+  function updateVisibleYear(index) {
+    currentYearIndex = index;                  // Remember which year we're showing
+    const column = YEAR_COLUMNS[index];       // Get column name for this year
+    const year = YEARS[index];                 // Get actual year value (for display)
+    
+    // Update the circle sizes to use the selected year's data
+    if (map.getLayer('population-layer')) {
+      map.setPaintProperty(
+        'population-layer',                    // Layer to update
+        'circle-radius',                       // Property to change
+        getFlanneryExpression(column)          // New value (expression for this year)
+      );
+    }
+    
+    // Update the year label in the UI
+    document.getElementById('yearLabel').innerText = 'Year: ' + year;
+    
+    // Update slider position (in case this was called from animation, not slider)
+    document.getElementById('yearSlider').value = index;
+    
+    console.log('Updated to year:', year, '(index:', index, ')');
+  }
+
+  // ============================================================
+  // 7. LEGEND GENERATION
+  // ============================================================
+  // Creates the visual legend showing FOUR nested circle sizes
+  
+  /**
+   * updateLegend()
+   * Generates the SVG legend showing FOUR nested circles
+   * 
+   * 📚 BACKGROUND: Nested Circle Legend
+   * 
+   * The legend shows FOUR concentric circles (one inside the other) representing:
+   * - 1,000 people (smallest, innermost)
+   * - 10,000 people
+   * - 50,000 people
+   * - 100,000 people (largest, outermost)
+   * 
+   * All circles:
+   * - Share the same center point (creating nested/concentric appearance)
+   * - Have NO fill (fill="none") - only red outlines are visible
+   * - Are drawn from LARGEST to SMALLEST (back to front)
+   * - Use dashed lines connecting center to each circle's edge for clarity
+   * 
+   * Why this design?
+   * - Shows relative sizes at a glance
+   * - Compact - takes less space than stacked circles
+   * - Clear - all circles visible simultaneously
+   * - Professional - commonly used in cartography
+   * 
+   * 🎨 BLENDING BEHAVIOR NOTE:
+   * Since circles have no fill (fill="none"), there is NO color blending.
+   * Only the red outlines (stroke) are visible, so overlapping doesn't
+   * create darker or lighter areas. Each circle's outline remains pure red.
+   * 
+   * If circles HAD fill colors (e.g., fill="rgba(255,0,0,0.3)"), then:
+   * - Overlapping areas would blend/combine the colors
+   * - Multiple transparent reds would create darker red where they overlap
+   * - This can obscure the individual circle sizes
+   * - That's why we use fill="none" - keeps each circle distinct!
+   * 
+   * Drawing order matters for visibility:
+   * - Largest circle (r4) drawn first → appears in BACK
+   * - Smallest circle (r1) drawn last → appears in FRONT
+   * - This ensures all circles are visible (front circles not hidden by back ones)
+   * 
+   * 🌍 STUDENTS: Modify the values below to match your data range
+   */
+  function updateLegend() {
+    const svg = document.getElementById('legendSvg');
+    
+    // ============================================================
+    // 🌍 STUDENTS: CHANGE THESE VALUES TO MATCH YOUR DATA RANGE
+    // ============================================================
+    // These are the population values shown in the legend
+    // Adjust them to make sense for your study area
+    
+    const value1 = 1000;      // Smallest circle
+    const value2 = 10000;     // Small-medium circle
+    const value3 = 50000;     // Medium-large circle
+    const value4 = 100000;    // Largest circle
+    
+    // Define the text labels that appear for each circle
+    const label1 = "1,000";
+    const label2 = "10,000";
+    const label3 = "50,000";
+    const label4 = "100,000";
+    
+    // Examples for different contexts:
+    // 
+    // For rural areas with small populations:
+    // const value1 = 500;
+    // const value2 = 2000;
+    // const value3 = 5000;
+    // const value4 = 10000;
+    // const label1 = "500"; const label2 = "2,000"; const label3 = "5,000"; const label4 = "10,000";
+    //
+    // For metropolitan areas with large populations:
+    // const value1 = 50000;
+    // const value2 = 100000;
+    // const value3 = 500000;
+    // const value4 = 1000000;
+    // const label1 = "50,000"; const label2 = "100,000"; const label3 = "500,000"; const label4 = "1,000,000";
+    // ============================================================
+    
+    // Calculate circle sizes using Flannery formula
+    // scaleFactor makes circles smaller so they fit nicely in the legend
+    const scaleFactor = 1.0;  // 100% of actual map size for proper visibility in legend
+    
+    // Apply Flannery formula: radius = (value/max)^0.57 × maxRadius × scaleFactor
+    // Each radius is calculated based on its population value
+    const r1 = Math.pow(value1 / maxPopulation, 0.57) * maxRadius * scaleFactor;
+    const r2 = Math.pow(value2 / maxPopulation, 0.57) * maxRadius * scaleFactor;
+    const r3 = Math.pow(value3 / maxPopulation, 0.57) * maxRadius * scaleFactor;
+    const r4 = Math.pow(value4 / maxPopulation, 0.57) * maxRadius * scaleFactor;
+    
+    // Calculate SVG dimensions and positions
+    // All circles aligned at BOTTOM, centered horizontally
+    const svgWidth = r4 * 2 + 60;    // Width based on largest circle + margins
+    const svgHeight = r4 * 2 + 30;   // Height based on largest circle + space for labels
+    const centerX = svgWidth / 2;    // Center horizontally
+    const bottomY = svgHeight - 10;  // Bottom baseline position
+    
+    // Calculate Y positions - all circles sit on the same bottom baseline
+    const cy1 = bottomY - r1;  // Smallest circle
+    const cy2 = bottomY - r2;  // Medium circle
+    const cy3 = bottomY - r3;  // Large circle
+    const cy4 = bottomY - r4;  // Largest circle
+    
+    // Set SVG dimensions
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
+    
+    // Generate SVG content with FOUR NESTED circles
+    // 
+    // CRITICAL POSITIONING: All circles aligned at BOTTOM
+    // - Each circle's center Y position calculated so bottom edge touches baseline
+    // - All circles share same horizontal center (centerX)
+    // - Labels positioned ABOVE each circle (no dashed lines)
+    // - Largest circle drawn first = appears in back
+    // - Smallest circle drawn last = appears in front
+    //
+    // Each circle has:
+    // - fill="none" → No interior color, only outline visible
+    // - stroke="red" → Red outline color
+    // - stroke-width="1.5" → Medium thickness outline
+    //
+    // 🎨 NO COLOR BLENDING occurs because:
+    // - fill="none" means circles are transparent/empty inside
+    // - Only the strokes (outlines) are drawn
+    // - Strokes don't blend - each remains its own pure color
+    // - If we used fill="rgba(255,0,0,0.3)", overlapping areas would
+    //   become darker where multiple circles overlap
+    //
+    // 🗺️ STUDENTS: You can change circle outline color by modifying stroke="red"
+    // Examples:
+    //   - Blue: stroke="blue" or stroke="#0000FF"
+    //   - Green: stroke="green" or stroke="#00FF00"
+    //   - Black: stroke="black" or stroke="#000000"
+    //   - Custom: stroke="rgb(128, 0, 255)" for purple
+    
+    svg.innerHTML = `
+      <!-- Largest circle (100,000) - drawn FIRST so it appears in BACK -->
+      <circle cx="${centerX}" cy="${cy4}" r="${r4}" fill="none" stroke="red" stroke-width="1.5"/>
+      <text x="${centerX}" y="${cy4 - r4 - 5}" text-anchor="middle" font-size="11" fill="#333">${label4}</text>
+      
+      <!-- Large circle (50,000) -->
+      <circle cx="${centerX}" cy="${cy3}" r="${r3}" fill="none" stroke="red" stroke-width="1.5"/>
+      <text x="${centerX}" y="${cy3 - r3 - 5}" text-anchor="middle" font-size="11" fill="#333">${label3}</text>
+      
+      <!-- Medium circle (10,000) -->
+      <circle cx="${centerX}" cy="${cy2}" r="${r2}" fill="none" stroke="red" stroke-width="1.5"/>
+      <text x="${centerX}" y="${cy2 - r2 - 5}" text-anchor="middle" font-size="11" fill="#333">${label2}</text>
+      
+      <!-- Smallest circle (1,000) - drawn LAST so it appears in FRONT -->
+      <circle cx="${centerX}" cy="${cy1}" r="${r1}" fill="none" stroke="red" stroke-width="1.5"/>
+      <text x="${centerX}" y="${cy1 - r1 - 5}" text-anchor="middle" font-size="11" fill="#333">${label1}</text>
+    `;
+    
+    console.log('Legend updated with nested circles (bottom-aligned). Radii:', 
+                r1.toFixed(1), r2.toFixed(1), r3.toFixed(1), r4.toFixed(1));
+  }
+
+  // ============================================================
+  // 8. EVENT HANDLERS - User Interface Controls
+  // ============================================================
+  // These functions respond to user interactions with sliders, buttons, etc.
+  // Each "addEventListener" watches for a specific user action
+  
+  /**
+   * Year Slider - Manually select which year to display
+   * When user drags the slider, update the map to show that year
+   */
+  document.getElementById('yearSlider').addEventListener('input', (e) => {
+    const index = parseInt(e.target.value);  // Get slider position (0-3)
+    updateVisibleYear(index);                 // Update map to show this year
+  });
+
+  /**
+   * Speed Slider - Adjust animation speed
+   * Controls how many milliseconds between each frame
+   * Lower = faster, Higher = slower
+   */
+  document.getElementById('speedSlider').addEventListener('input', (e) => {
+    speed = parseInt(e.target.value);              // Get new speed value
+    document.getElementById('speedLabel').innerText = speed;  // Update label
+    
+    // If animation is currently playing, restart it with new speed
+    if (isPlaying) {
+      clearInterval(intervalId);                   // Stop old timer
+      intervalId = setInterval(playNextFrame, speed);  // Start new timer with new speed
     }
   });
-});
 
-// Initialize control panel visibility
-showHideControls();
-
-// Update legend when any control changes
-const uiInputs = ['classificationMethod','numClasses','popdensOpacity','denscoverClassificationMethod','denscoverNumClasses','denscoverOpacity','maxRadius','poipopOpacity','contoursOpacity','dotSize','dotsOpacity','boundariesOpacity'];
-uiInputs.forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('input', () => { updateLegend(); });
-});
-
-// Update controls and legend when layer checkboxes change
-['popdensToggle','denscoverToggle','poipopToggle','contoursToggle','dotsToggle','boundariesToggle'].forEach(id => {
-  document.getElementById(id).addEventListener('change', () => {
-    showHideControls();
-    updateLegend();
+  /**
+   * Max Radius Slider - Adjust circle sizes
+   * Controls the maximum size of circles in pixels
+   */
+  document.getElementById('maxRadiusSlider').addEventListener('input', (e) => {
+    maxRadius = parseInt(e.target.value);          // Get new max radius
+    document.getElementById('maxRadiusValue').innerText = maxRadius;  // Update label
+    
+    // Update map and legend with new sizes (if data is loaded)
+    if (geojsonData) {
+      updateVisibleYear(currentYearIndex);         // Recalculate circle sizes
+      updateLegend();                              // Redraw legend circles
+    }
   });
-});
 
-// Map load event (currently empty, but can be used for initialization)
-map.on('load', () => {});
+  /**
+   * Opacity Slider - Adjust circle transparency
+   * 0% = completely invisible
+   * 100% = completely solid
+   */
+  document.getElementById('opacitySlider').addEventListener('input', (e) => {
+    const opacityPercent = parseInt(e.target.value);  // Get slider value (0-100)
+    opacity = opacityPercent / 100;                    // Convert to 0.0-1.0 range
+    document.getElementById('opacityValue').innerText = opacityPercent;  // Update label
+    
+    // Update circle opacity on map
+    if (map.getLayer('population-layer')) {
+      map.setPaintProperty('population-layer', 'circle-opacity', opacity);
+    }
+    
+    // Update legend to match (if data is loaded)
+    if (geojsonData) {
+      updateLegend();
+    }
+  });
 
-// Log initialization message
-console.log('Thessalia Cartography Viewer - Ready');
-console.log('Data files expected in "data/" folder');
-console.log(layerDefinitions);
+  // ============================================================
+  // 9. ANIMATION CONTROLS
+  // ============================================================
+  // Functions that handle the play/pause animation feature
+  
+  /**
+   * Play/Pause Button - Start or stop the animation
+   * 
+   * How animation works:
+   * 1. setInterval() calls playNextFrame() repeatedly every 'speed' milliseconds
+   * 2. playNextFrame() advances to the next year
+   * 3. When reaching the last year, it loops back to the first
+   * 4. clearInterval() stops the animation
+   */
+  document.getElementById('playPauseBtn').addEventListener('click', () => {
+    // Check if data is loaded before allowing animation
+    if (!geojsonData) { 
+      alert('Please wait for data to load first!'); 
+      return; 
+    }
+    
+    if (!isPlaying) {
+      // START ANIMATION
+      isPlaying = true;
+      document.getElementById('playPauseBtn').innerText = '⏸ Pause';  // Change button to Pause
+      
+      // setInterval() calls playNextFrame every 'speed' milliseconds
+      intervalId = setInterval(playNextFrame, speed);
+      
+      console.log('Animation started at speed:', speed, 'ms');
+    } else {
+      // STOP ANIMATION
+      isPlaying = false;
+      document.getElementById('playPauseBtn').innerText = '▶ Play';   // Change button back to Play
+      
+      // clearInterval() stops the repeating timer
+      clearInterval(intervalId);
+      
+      console.log('Animation paused');
+    }
+  });
 
-// ============================================================
-// END OF JAVASCRIPT CODE
-// ============================================================
+  /**
+   * playNextFrame()
+   * Advances to the next year in the animation sequence
+   * Called repeatedly by setInterval() when animation is playing
+   * 
+   * Uses modulo (%) operator to loop: (3 + 1) % 4 = 0
+   * This means after year 3, it goes back to year 0
+   */
+  function playNextFrame() {
+    const nextIndex = (currentYearIndex + 1) % YEARS.length;  // Calculate next year (with looping)
+    updateVisibleYear(nextIndex);                              // Display that year
+  }
+
+  // ============================================================
+  // 10. BASEMAP SWITCHER
+  // ============================================================
+  // Allows user to change the background map style
+  
+  /**
+   * Basemap Selector Dropdown
+   * When user selects a different basemap style, apply it
+   * 
+   * IMPORTANT: Changing the basemap removes all layers!
+   * We must re-add BOTH our boundary layer AND population layer 
+   * after the new style loads.
+   * 
+   * The order matters: boundaries first, then population circles on top.
+   */
+  document.getElementById('styleSelector').addEventListener('change', (e) => {
+    const newStyle = e.target.value;  // Get selected basemap URL
+    
+    console.log('Changing basemap to:', newStyle);
+    
+    map.setStyle(newStyle);  // Apply new basemap style
+    
+    // Wait for new style to finish loading, then re-add our layers
+    map.once('styledata', () => {
+      console.log('New basemap loaded, re-adding layers');
+      
+      if (geojsonData && boundariesData) {
+        // Add in correct order: boundaries first, then population circles
+        addBoundariesLayer();                // Bottom layer
+        addPopulationLayer();                // Top layer
+        updateVisibleYear(currentYearIndex);  // Show current year
+      }
+    });
+  });
+
+  // ============================================================
+  // 11. INITIALIZATION
+  // ============================================================
+  // Start the application when the map finishes loading
+  
+  /**
+   * Map 'load' Event
+   * This event fires when MapLibre finishes initializing the map
+   * At this point, we can safely load our data and add layers
+   */
+  map.on('load', () => {
+    console.log('Map loaded, initializing application...');
+    loadData();  // Start loading both GeoJSON files
+  });
+
+  // Log application info to console
+  console.log('='.repeat(60));
+  console.log('Population Timelapse Map with Boundaries - Initialized');
+  console.log('Configuration:');
+  console.log('  Years:', YEARS);
+  console.log('  Columns:', YEAR_COLUMNS);
+  console.log('  Population Data Path:', DATA_PATH);
+  console.log('  Boundaries Data Path:', BOUNDARIES_PATH);
+  console.log('='.repeat(60));
+
+  // ============================================================
+  // END OF JAVASCRIPT CODE
+  // ============================================================
 </script>
 
 <!-- ============================================================
@@ -1284,185 +1159,103 @@ console.log(layerDefinitions);
      
      📚 WHAT YOU NEED TO MODIFY (🌍 = MANDATORY):
      
-     1. MAP SETTINGS (Lines ~351-355):
+     1. DATA CONFIGURATION (Lines ~285-340):
+        🌍 YEAR_COLUMNS - Column names in your population GeoJSON
+        🌍 YEARS - Actual year values
+        🌍 DATA_PATH - Path to your population points GeoJSON file
+        🌍 BOUNDARIES_PATH - Path to your boundary polygons GeoJSON file
+     
+     2. MAP SETTINGS (Lines ~342-365):
         🌍 center - [longitude, latitude] for your study area
         🌍 zoom - Initial zoom level (8-12 typical for regions)
      
-     2. DATA CONFIGURATION (Lines ~370-410):
-        🌍 All file paths (url) - Point to your GeoJSON files
-        🌍 All dataField values - Match your GeoJSON column names
-        🌍 maxValueApprox for poipop - Approximate max population
-     
-     3. COLOR SCHEMES (Lines ~433-453):
-        🗺️ colorSchemes - Colors for choropleth map
-        🗺️ denscoverColorSchemes - Colors for dasymmetric map
-        🗺️ customBreaks & customColors - Custom classification values
-        
-        IMPORTANT - How to change colors:
-        - Colors are automatically used in BOTH the map AND the legend
-        - Change colors in the colorSchemes object (Lines ~437-444)
-        - The legend will automatically update with your new colors
-        - Use hex format: '#RRGGBB' (e.g., '#ff0000' = red)
-        - Number of colors = Number of classes
-        
-        IMPORTANT - How to change custom breaks:
-        - For Choropleth: Edit customBreaks (Line ~449) and customColors (Line ~450)
-        - For Dasymmetric: Edit denscoverCustomBreaks (Line ~461) and denscoverCustomColors (Line ~462)
-        - Rule: Number of colors MUST equal number of breaks + 1
-        - Example: 5 breaks = 6 colors (one for each range)
-        - Legend automatically updates with your new breaks and colors
-     
-     4. LEGEND TITLE (Lines ~885-897):
+     3. LEGEND HEADER (Lines ~152-173 in HTML):
         🌍 Main title text
-        🌍 Data source information
+        🌍 Data source credit
         🌍 Your name and institution
-        🌍 Student ID
      
-     5. LAYER NAMES (in HTML controls section):
-        🌍 Lines ~172-246 - Change layer names shown in left control panel
-        - Change text inside <strong> tags
-        - Example: Change "Population Density (Choropleth Map)" to your name
-        - These are the names users see when selecting layers
+     4. LEGEND VALUES (Lines ~668-698):
+        🌍 smallValue, mediumValue, largeValue - Population thresholds
+        🌍 smallLabel, mediumLabel, largeLabel - Text descriptions
      
-     6. LEGEND TITLES (in JavaScript updateLegend function):
-        🌍 Choropleth legend title (Line ~906)
-        🌍 Dasymmetric legend title (Line ~921)
-        🌍 Proportional symbols legend title (Line ~940)
-        🌍 Contours legend title (Line ~964)
-        🌍 Dots legend title (Line ~973)
-        - These titles appear in the legend when layers are active
-        - Change the text inside the quotes in the html += lines
+     5. BOUNDARY STYLING (Lines ~525-563):
+        🗺️ line-color - Color of boundary lines (default: cyan)
+        🗺️ line-width - Thickness of boundaries (default: 1.5px)
+        🗺️ line-opacity - Transparency of boundaries (default: 0.6)
      
-     7. VISUALIZATION COLORS (🗺️ = OPTIONAL):
-        🗺️ Proportional symbols color (Line ~747) - 'rgba(255,0,0,0.25)'
-        🗺️ Contour line color (Line ~808) - '#8B0000'
-        🗺️ Dot color (Line ~841) - '#ff0000' (red)
-        🗺️ Boundary color (Line ~864) - '#bbbbbb'
-        
-        NOTE: Circle colors in legend (Lines ~955-962) show only red outline
-        with no fill (fill="none" stroke="red") for better visibility
+     6. OTHER STYLING (🗺️ = OPTIONAL):
+        🗺️ Circle color (Line ~593) - 'rgba(255,0,0,1)'
+        🗺️ Legend circle colors (Lines ~745-753) - fill and stroke
+        🗺️ Title styling (Lines ~45-88 in CSS) - fonts, sizes, colors
+        🗺️ Basemap options (Lines ~145-151) - add more choices
      
      ============================================================
      
      🐛 TROUBLESHOOTING:
      
-     Problem: Map shows but no layers appear
+     Problem: Map shows but no circles or boundaries appear
      Solution: 
      - Open browser console (F12 → Console tab)
      - Check for error messages about file loading
-     - Verify all file paths in layerDefinitions are correct
-     - Ensure GeoJSON files exist at those locations
+     - Verify DATA_PATH and BOUNDARIES_PATH are correct
+     - Ensure both GeoJSON files exist at those locations
+     - Check that file paths use correct relative or absolute paths
      
-     Problem: Changed colors but legend still shows old colors
+     Problem: Boundaries appear but circles don't (or vice versa)
      Solution:
-     - The legend updates automatically - you only need to change colorSchemes
-     - Reload the page (F5) to see changes
-     - Make sure you saved the HTML file before reloading
-     - Check browser cache: Try Ctrl+Shift+R (hard refresh)
-     
-     Problem: Custom breaks not working or showing errors
-     Solution:
-     - Check that customColors has exactly one more color than customBreaks
-     - Example: 5 breaks needs 6 colors
-     - Breaks must be in ascending order: [10, 50, 100, 200, 500]
-     - Colors format: ['#color1', '#color2', '#color3']
-     - Select "Custom intervals" in classification method dropdown
-     
-     Problem: Changed layer name but still shows old name
-     Solution:
-     - Layer names appear in TWO places:
-       1. Control panel (HTML, lines ~172-246) - name shown in checkbox
-       2. Legend (JavaScript, lines ~906-973) - title in legend
-     - You may need to change BOTH locations
-     - Control panel changes are in HTML <strong> tags
-     - Legend changes are in JavaScript html += lines
-     
-     Problem: Colors look different on map vs legend
-     Solution:
-     - Map and legend use the SAME colors from colorSchemes
-     - Check if opacity is affecting appearance
-     - Legend shows solid colors; map may have transparency
-     - Try adjusting opacity slider to match legend appearance
-     
-     Problem: Choropleth/Dasymmetric shows wrong colors
-     Solution:
-     Solution:
-     - Check dataField matches your GeoJSON column name exactly (case-sensitive!)
-     - Verify your data contains numeric values, not text
+     - Check console for errors about specific file
+     - Verify the problematic GeoJSON file is valid
      - Test file at https://geojson.io/
+     - Ensure column names in YEAR_COLUMNS match your data exactly
      
-     Problem: Proportional symbols are wrong size
+     Problem: Boundaries appear in wrong color
      Solution:
-     - Adjust maxValueApprox to match your actual maximum population
-     - Should be approximate largest value in your dataset
-     - Too small = all circles appear large
-     - Too large = all circles appear tiny
+     - Find line-color in addBoundariesLayer() function (around line 545)
+     - Change 'rgb(200, 200, 200)' to your desired color
+     - Use rgb(red, green, blue) format where values are 0-255
      
-     Problem: Classification fails or shows errors
+     Problem: Boundaries too thick/thin or too faint/strong
      Solution:
-     - Ensure data values are numeric
-     - Check for null or undefined values in your data
-     - Verify classification method is appropriate for your data range
+     - Adjust line-width (around line 556) - try values from 0.5 to 3
+     - Adjust line-opacity (around line 568) - try values from 0.3 to 1.0
+     
+     Problem: Animation doesn't work
+     Solution:
+     - Ensure YEARS array has same length as YEAR_COLUMNS
+     - Check yearSlider max value matches number of years - 1
+     - Verify all year columns exist in your population GeoJSON
      
      Problem: After changing basemap, layers disappear
      Solution:
-     - This is normal - code automatically re-adds them
+     - This is normal behavior - the code re-adds them automatically
      - If they don't reappear, check console for errors
-     - Verify all file paths are still accessible
+     - Verify both GeoJSON files are still accessible
      
      ============================================================
      
-     📖 UNDERSTANDING THE APPLICATION:
+     📖 UNDERSTANDING THE CODE FLOW:
      
-     Layer Types Explained:
+     1. Map loads → 'load' event fires (line ~929)
+     2. loadData() called → Fetches BOTH GeoJSON files simultaneously
+     3. Population features SORTED by size (largest first) for rendering order
+     4. calculatePopulationRange() → Finds min/max values
+     5. addBoundariesLayer() → Creates boundary outlines (bottom layer)
+     6. addPopulationLayer() → Creates circles (top layer)
+     7. updateVisibleYear(0) → Shows first year
+     8. updateLegend() → Generates legend SVG
      
-     1. **Choropleth Map** (Population Density)
-        - Shows density by administrative area
-        - Uses classification (equal interval, quantile, Jenks, custom)
-        - Best for: Comparing municipalities
+     Layer ordering (bottom to top):
+     1. Basemap tiles
+     2. Municipality boundaries (light grey outlines)
+     3. Population circles (red circles with size representing population)
+        - Circles are sorted: LARGEST drawn first (back), SMALLEST drawn last (front)
+        - This ensures smaller circles always visible on top of larger ones
      
-     2. **Dasymmetric Map** (Population by Land Cover)
-        - Refines density using land cover data
-        - More accurate than choropleth
-        - Best for: Understanding population distribution patterns
-     
-     3. **Proportional Symbols** (Circles)
-        - Circle size = total population
-        - Uses Flannery scaling (exponent 0.57)
-        - Best for: Showing absolute magnitudes
-     
-     4. **Isopleths** (Contours)
-        - Lines of equal population potential
-        - Shows zones of influence
-        - Best for: Identifying population centers
-     
-     5. **Dot Density Map**
-        - Each dot = X people (e.g., 500)
-        - Visual pattern shows concentration
-        - Best for: General distribution patterns
-     
-     6. **Boundaries**
-        - Administrative borders
-        - Provides geographic context
-        - Best for: Reference and orientation
-     
-     Classification Methods:
-     
-     - **Equal Interval**: Divides range into equal steps
-       - Use when: Distribution is roughly uniform
-       - Example: 0-20, 20-40, 40-60, 60-80, 80-100
-     
-     - **Quantile**: Equal number of features per class
-       - Use when: Want to compare relative positions
-       - Example: Each class contains 20% of municipalities
-     
-     - **Natural Breaks (Jenks)**: Maximizes between-class differences
-       - Use when: Data has natural groupings
-       - Example: Automatically finds "gaps" in data
-     
-     - **Custom**: You define the breaks
-       - Use when: You have domain knowledge
-       - Example: Break at important thresholds
+     User interactions:
+     - Slider moved → updateVisibleYear() → Recalculates circles
+     - Play clicked → setInterval() → playNextFrame() every X ms
+     - Settings changed → Updates applied immediately
+     - Basemap changed → Both layers re-added in correct order
      
      ============================================================
      
@@ -1473,7 +1266,7 @@ console.log(layerDefinitions);
      - GeoJSON Validator: https://geojson.io/
      - Finding Coordinates: https://www.google.com/maps (right-click any location)
      - Color Picker: https://htmlcolorcodes.com/
-     - ColorBrewer (cartographic colors): https://colorbrewer2.org/
+     - RGB Color Guide: https://www.rapidtables.com/web/color/RGB_Color.html
      - Flannery Scaling Paper: https://doi.org/10.1080/00087041.1971.10471835
      
      ============================================================
@@ -1481,127 +1274,43 @@ console.log(layerDefinitions);
      💡 TIPS FOR SUCCESS:
      
      1. Always work with a copy of your original files
-     2. Test all GeoJSON files in https://geojson.io/ before using
-     3. Use meaningful, consistent column names in your data
-     4. Start with one layer, get it working, then add others
-     5. Use browser console (F12) to debug issues
-     6. Keep GeoJSON files under 5MB for good performance
-     7. Use appropriate classification methods for your data
-     8. Test with both Light and Dark basemaps
-     9. Consider color blindness when choosing colors
-     10. Document your data sources and methods
+     2. Test BOTH GeoJSON files in https://geojson.io/ before using them
+     3. Ensure boundaries file has Polygon or MultiPolygon geometries
+     4. Ensure population file has Point geometries with population columns
+     5. Use browser console (F12) to see helpful error messages
+     6. Start with default settings, then customize gradually
+     7. Keep your GeoJSON files small (<5MB each) for fast loading
+     8. Use meaningful column names in your data
+     9. When choosing boundary colors, consider contrast with:
+        - Your chosen basemap (light vs dark)
+        - Your circle colors
+        - The overall aesthetic you want
      
      ============================================================
      
-     📝 STEP-BY-STEP CUSTOMIZATION GUIDE:
+     🎨 CUSTOMIZATION EXAMPLES:
      
-     🎨 HOW TO CHANGE COLORS:
+     Example 1: Make boundaries more visible on dark basemap
+     - Increase line-width to 2 or 2.5
+     - Increase line-opacity to 0.8 or 0.9
+     - Change to brighter color like white: 'rgb(255, 255, 255)'
      
-     For Choropleth Map:
-     1. Find colorSchemes object (Lines ~437-444)
-     2. Change hex color values (e.g., '#ffcccc' to '#ccffcc')
-     3. Save file and refresh browser
-     4. Legend will automatically show new colors
+     Example 2: Make boundaries more subtle on light basemap
+     - Decrease line-width to 1 or 0.8
+     - Decrease line-opacity to 0.4 or 0.5
+     - Use darker gray: 'rgb(150, 150, 150)'
      
-     For Dasymmetric Map:
-     1. Find denscoverColorSchemes object (Lines ~451-458)
-     2. Change hex color values
-     3. Save and refresh
-     4. Legend updates automatically
+     Example 3: Match boundaries to circle color theme
+     - If circles are red, use pink boundaries: 'rgb(255, 100, 100)'
+     - If circles are blue, use light blue boundaries: 'rgb(100, 150, 255)'
      
-     For Custom Classification Colors:
-     1. Find customColors (Line ~450) or denscoverCustomColors (Line ~462)
-     2. Change hex color values: ['#color1', '#color2', '#color3', ...]
-     3. Remember: Number of colors = Number of breaks + 1
-     4. Save and refresh
-     
-     🔢 HOW TO CHANGE CUSTOM BREAKS:
-     
-     For Choropleth Map:
-     1. Find customBreaks (Line ~449)
-     2. Change values: [30, 75, 150, 300, 600]
-     3. Find customColors (Line ~450)
-     4. Ensure you have one more color than breaks
-     5. Save and refresh
-     6. Select "Custom intervals" in dropdown to see changes
-     
-     For Dasymmetric Map:
-     1. Find denscoverCustomBreaks (Line ~461)
-     2. Change values: [500, 1500, 3500, 6000, 8500]
-     3. Find denscoverCustomColors (Line ~462)
-     4. Ensure you have one more color than breaks
-     5. Save and refresh
-     6. Select "Custom intervals" in dropdown to see changes
-     
-     📛 HOW TO CHANGE LAYER NAMES:
-     
-     In Control Panel (what users click):
-     1. Find HTML section Lines ~172-246
-     2. Locate <strong>Layer Name</strong> for each layer
-     3. Change text inside <strong> tags
-     4. Example: <strong>Population Density (Choropleth Map)</strong>
-        becomes: <strong>My Custom Name</strong>
-     5. Save and refresh
-     
-     In Legend (titles shown when layer is active):
-     1. Find updateLegend() function (starting Line ~883)
-     2. Locate html += `<div class="legend-title">...</div>` lines
-     3. Change text inside the quotes
-     4. Examples:
-        - Line ~906: Change "Choropleth map (people / km²)"
-        - Line ~921: Change "Dasymmetric map (people / km² by land cover zone)"
-        - Line ~940: Change "Population (indicative values)"
-        - Line ~964: Change "Population dynamic (2M & 4M)"
-        - Line ~973: Change "Population density"
-     5. Save and refresh
-     
-     ⚠️ IMPORTANT RULES:
-     
-     1. Color Arrays:
-        - Must use square brackets: ['#color1', '#color2']
-        - Must use quotes around each color: '#ff0000'
-        - Colors separated by commas
-        - Number of colors in custom = Number of breaks + 1
-     
-     2. Break Arrays:
-        - Must be in ascending order: [10, 50, 100, 500]
-        - Use square brackets: [value1, value2, value3]
-        - No quotes needed for numbers
-        - Values separated by commas
-     
-     3. Testing Changes:
-        - Always save file before refreshing browser
-        - Use F5 or Ctrl+R to refresh
-        - Use Ctrl+Shift+R for hard refresh (clears cache)
-        - Check browser console (F12) for error messages
-     
-     ============================================================
-     
-     🎨 CUSTOMIZATION IDEAS:
-     
-     Color Schemes:
-     - Sequential: Light → Dark (one hue, increasing intensity)
-     - Diverging: Light → Dark → Light (two hues, middle = neutral)
-     - Qualitative: Distinct colors (for categories, not quantities)
-     
-     Best Practices:
-     - Use ColorBrewer for cartographically sound colors
-     - Ensure sufficient contrast with basemap
-     - Avoid red/green combinations (colorblind unfriendly)
-     - Limit to 5-7 classes for readability
-     - Use darker colors for higher values (intuitive)
-     
-     Advanced Modifications:
-     - Add popup on click showing municipality data
-     - Implement search functionality for specific areas
-     - Add data export functionality
-     - Create print-friendly version
-     - Add time slider for temporal data
-     - Implement comparison view (side-by-side maps)
+     Example 4: Create a glowing boundary effect
+     - Add line-blur property in paint object
+     - Set line-width to 3
+     - Set line-opacity to 0.7
+     - Use bright color like cyan or yellow
      
      ============================================================
 -->
 </body>
 </html>
-
-
